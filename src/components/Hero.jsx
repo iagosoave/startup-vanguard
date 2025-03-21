@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import erp from './erp-Vanguard.png';
+import erp from './erp-vanguard.png';
+
 
 const Hero = () => {
   const [navbarVisible, setNavbarVisible] = useState(false);
