@@ -2,38 +2,77 @@ import React from 'react';
 
 const SystemDescription = () => {
   return (
-    <section className="w-full bg-white py-16 px-6 md:px-12 lg:px-20">
-      <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-8 text-black">
-          Um sistema projetado para o setor de autopeças
-        </h2>
+    <section className="w-full bg-black text-white py-24 px-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Título com estilo minimalista */}
+        <div className="text-center mb-20">
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase mb-4">
+            CONEXÃO DIRETA
+          </h2>
+          <div className="flex items-center justify-center my-6">
+            <div className="h-px w-16 bg-white opacity-30"></div>
+            <span className="text-lg md:text-xl tracking-widest font-light px-6 opacity-70">MARKETPLACE</span>
+            <div className="h-px w-16 bg-white opacity-30"></div>
+          </div>
+        </div>
         
-        <div className="w-20 h-1 bg-black my-5 mx-auto"></div>
-        
-        <p className="text-lg text-gray-800 max-w-3xl mx-auto mb-10">
-          O Vanguard foi desenvolvido para simplificar e otimizar todas as operações do seu negócio de autopeças.
-          Com interface intuitiva e ferramentas especializadas, você terá total controle sobre estoque, 
-          vendas, financeiro e muito mais - tudo em um único lugar.
-        </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-          <div className="p-6 border border-gray-200 rounded-lg">
-            <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white text-xl font-bold mx-auto mb-4">1</div>
-            <h3 className="text-xl font-bold mb-3">Controle Total</h3>
-            <p className="text-gray-700">Gerencie todo seu negócio em uma única plataforma, sem complicações.</p>
+        {/* Cards com layout minimalista */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-1 mt-16">
+          {/* Card 1 */}
+          <div className="p-10 border border-white border-opacity-10 relative group">
+            <div className="absolute top-0 left-0 w-full h-full bg-white opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="mb-8 opacity-80">
+                <div className="w-10 h-[1px] bg-white mb-8"></div>
+                <span className="text-6xl font-light">01</span>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 tracking-tight">MECÂNICAS</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Acesso direto a milhares de peças com preços competitivos. 
+                Encontre o que precisa sem intermediários.
+              </p>
+            </div>
           </div>
           
-          <div className="p-6 border border-gray-200 rounded-lg">
-            <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white text-xl font-bold mx-auto mb-4">2</div>
-            <h3 className="text-xl font-bold mb-3">Alta Performance</h3>
-            <p className="text-gray-700">Sistema rápido e eficiente, mesmo com grandes volumes de produtos e dados.</p>
+          {/* Card 2 */}
+          <div className="p-10 border border-white border-opacity-10 relative group">
+            <div className="absolute top-0 left-0 w-full h-full bg-white opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="mb-8 opacity-80">
+                <div className="w-10 h-[1px] bg-white mb-8"></div>
+                <span className="text-6xl font-light">02</span>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 tracking-tight">AUTOPEÇAS</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Conecte-se diretamente com oficinas mecânicas e expanda seu alcance de vendas sem esforço adicional.
+              </p>
+            </div>
           </div>
           
-          <div className="p-6 border border-gray-200 rounded-lg">
-            <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white text-xl font-bold mx-auto mb-4">3</div>
-            <h3 className="text-xl font-bold mb-3">Suporte Especializado</h3>
-            <p className="text-gray-700">Equipe dedicada que entende as particularidades do mercado de autopeças.</p>
+          {/* Card 3 */}
+          <div className="p-10 border border-white border-opacity-10 relative group">
+            <div className="absolute top-0 left-0 w-full h-full bg-white opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="mb-8 opacity-80">
+                <div className="w-10 h-[1px] bg-white mb-8"></div>
+                <span className="text-6xl font-light">03</span>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 tracking-tight">PLATAFORMA</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Interface intuitiva e minimalista que facilita a busca, negociação e acompanhamento das transações.
+              </p>
+            </div>
           </div>
+        </div>
+        
+        {/* CTA final */}
+        <div className="text-center mt-20">
+          <button className="bg-transparent hover:bg-white hover:text-black border-2 border-white text-white font-bold tracking-widest py-5 px-16 rounded-full transition-all duration-500 text-lg uppercase">
+            Saiba mais
+          </button>
+          <p className="mt-8 text-sm tracking-wider opacity-50 uppercase">
+            Revolucionando o mercado de autopeças
+          </p>
         </div>
       </div>
     </section>

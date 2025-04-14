@@ -2,142 +2,127 @@ import React from 'react';
 
 const MainFeatures = () => {
   return (
-    <section className="w-full bg-gray-50 py-10 px-6 md:px-12 lg:px-16">
-      <div className="max-w-4xl mx-auto">
-        {/* Cabeçalho centralizado mais compacto */}
-        <div className="text-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-black">
-            Principais Funcionalidades
+    <section className="w-full bg-white text-black py-24 px-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Cabeçalho com estilo minimalista */}
+        <div className="text-center mb-20">
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase mb-4">
+            RECURSOS
           </h2>
-          <div className="w-16 h-1 bg-black my-3 mx-auto"></div>
-          <p className="text-base text-gray-700 max-w-2xl mx-auto">
-            Soluções inteligentes para otimizar seu negócio de autopeças
-          </p>
+          <div className="flex items-center justify-center my-6">
+            <div className="h-px w-16 bg-black opacity-30"></div>
+            <span className="text-lg md:text-xl tracking-widest font-light px-6 opacity-70">MARKETPLACE</span>
+            <div className="h-px w-16 bg-black opacity-30"></div>
+          </div>
         </div>
-
-        {/* Layout em duas colunas mais compacto */}
-        <div className="flex flex-col lg:flex-row items-start gap-8">
-          {/* Coluna da esquerda - Features principais */}
-          <div className="lg:w-1/2">
-            <div className="space-y-4">
-              {/* Feature 1 */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-black">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white font-bold shrink-0">
-                    <span>1</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold mb-1">Análise de Perfil Energético</h3>
-                    <p className="text-sm text-gray-700">
-                      Analise detalhadamente o consumo energético de sua empresa, identificando padrões e oportunidades de economia.
-                    </p>
-                  </div>
-                </div>
+        
+        {/* Grid de recursos em estilo minimalista */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-200">
+          {/* Feature 1 */}
+          <div className="bg-white p-10 relative group">
+            <div className="absolute top-0 left-0 w-full h-full bg-black opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="mb-8 opacity-80">
+                <div className="w-10 h-[1px] bg-black mb-8"></div>
+                <span className="text-xs tracking-widest uppercase opacity-50">Recurso</span>
               </div>
-              
-              {/* Feature 2 */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-black">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white font-bold shrink-0">
-                    <span>2</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold mb-1">Comparação entre Energias</h3>
-                    <p className="text-sm text-gray-700">
-                      Compare diferentes fontes de energia e seus impactos nos custos operacionais e na eficiência do seu negócio.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Feature 3 */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-black">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white font-bold shrink-0">
-                    <span>3</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold mb-1">Cálculo de Implementação</h3>
-                    <p className="text-sm text-gray-700">
-                      Obtenha estimativas precisas de custos, tempo e retorno sobre investimento para implementação de novas soluções.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <h3 className="text-2xl font-bold mb-4 tracking-tight">ANÁLISE DE MERCADO</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Visualize tendências de demanda, comparativos de preços e identifique oportunidades 
+                para expandir seu catálogo baseado em dados reais do mercado.
+              </p>
             </div>
           </div>
           
-          {/* Coluna da direita - Grid e recursos adicionais */}
-          <div className="lg:w-1/2">
-            {/* Card com visual mais compacto */}
-            <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-              {/* Grid de recursos */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3 bg-gray-50 rounded-lg text-center">
-                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white mx-auto mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                  </div>
-                  <h4 className="text-base font-bold mb-1">Gestão de Estoque</h4>
-                  <p className="text-xs text-gray-600">Controle total de inventário</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-lg text-center">
-                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white mx-auto mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <h4 className="text-base font-bold mb-1">Vendas</h4>
-                  <p className="text-xs text-gray-600">Processos simplificados</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-lg text-center">
-                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white mx-auto mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <h4 className="text-base font-bold mb-1">Financeiro</h4>
-                  <p className="text-xs text-gray-600">Relatórios inteligentes</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-lg text-center">
-                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white mx-auto mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <h4 className="text-base font-bold mb-1">Dashboard</h4>
-                  <p className="text-xs text-gray-600">Indicadores em tempo real</p>
-                </div>
+          {/* Feature 2 */}
+          <div className="bg-white p-10 relative group">
+            <div className="absolute top-0 left-0 w-full h-full bg-black opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="mb-8 opacity-80">
+                <div className="w-10 h-[1px] bg-black mb-8"></div>
+                <span className="text-xs tracking-widest uppercase opacity-50">Recurso</span>
               </div>
-              
-              {/* Recursos adicionais com design compacto */}
-              <div className="pt-3 border-t border-gray-200">
-                <h4 className="text-base font-bold mb-2 text-center">Recursos adicionais inclusos</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center">
-                    <span className="w-2 h-2 bg-black rounded-full mr-2"></span>
-                    <span className="text-sm">Controle de ordens</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="w-2 h-2 bg-black rounded-full mr-2"></span>
-                    <span className="text-sm">Análise de desempenho</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="w-2 h-2 bg-black rounded-full mr-2"></span>
-                    <span className="text-sm">Gestão de fornecedores</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="w-2 h-2 bg-black rounded-full mr-2"></span>
-                    <span className="text-sm">Automação de processos</span>
-                  </div>
-                </div>
-              </div>
+              <h3 className="text-2xl font-bold mb-4 tracking-tight">CONEXÃO DIRETA</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Comunique-se diretamente com fornecedores ou clientes sem intermediários, 
+                negociando condições específicas e estabelecendo relações comerciais duradouras.
+              </p>
             </div>
           </div>
+          
+          {/* Feature 3 */}
+          <div className="bg-white p-10 relative group">
+            <div className="absolute top-0 left-0 w-full h-full bg-black opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="mb-8 opacity-80">
+                <div className="w-10 h-[1px] bg-black mb-8"></div>
+                <span className="text-xs tracking-widest uppercase opacity-50">Recurso</span>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 tracking-tight">GESTÃO DE PEDIDOS</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Acompanhe todo o ciclo de vendas, desde a cotação até a entrega, 
+                com notificações em tempo real e histórico completo de transações.
+              </p>
+            </div>
+          </div>
+          
+          {/* Feature 4 */}
+          <div className="bg-white p-10 relative group">
+            <div className="absolute top-0 left-0 w-full h-full bg-black opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="mb-8 opacity-80">
+                <div className="w-10 h-[1px] bg-black mb-8"></div>
+                <span className="text-xs tracking-widest uppercase opacity-50">Recurso</span>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 tracking-tight">CATÁLOGO INTELIGENTE</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Organize seu inventário com sistema de categorização avançada e busca por 
+                compatibilidade veicular, tornando mais fácil encontrar as peças certas.
+              </p>
+            </div>
+          </div>
+          
+          {/* Feature 5 */}
+          <div className="bg-white p-10 relative group">
+            <div className="absolute top-0 left-0 w-full h-full bg-black opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="mb-8 opacity-80">
+                <div className="w-10 h-[1px] bg-black mb-8"></div>
+                <span className="text-xs tracking-widest uppercase opacity-50">Recurso</span>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 tracking-tight">LOGÍSTICA INTEGRADA</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Calcule fretes automaticamente, gere etiquetas de envio e 
+                acompanhe entregas em tempo real dentro da própria plataforma.
+              </p>
+            </div>
+          </div>
+          
+          {/* Feature 6 */}
+          <div className="bg-white p-10 relative group">
+            <div className="absolute top-0 left-0 w-full h-full bg-black opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="mb-8 opacity-80">
+                <div className="w-10 h-[1px] bg-black mb-8"></div>
+                <span className="text-xs tracking-widest uppercase opacity-50">Recurso</span>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 tracking-tight">ANÁLISE FINANCEIRA</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Visualize relatórios detalhados sobre suas vendas, margem de lucro 
+                e desempenho por categoria ou cliente para tomadas de decisão precisas.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* CTA final */}
+        <div className="text-center mt-20">
+          <button className="bg-black hover:bg-gray-900 text-white font-bold tracking-widest py-5 px-16 transition-all duration-300 text-lg uppercase">
+            Explorar recursos
+          </button>
+          <p className="mt-8 text-sm tracking-wider opacity-50 uppercase">
+            Ferramentas desenvolvidas para o setor automotivo
+          </p>
         </div>
       </div>
     </section>
