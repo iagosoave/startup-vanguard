@@ -4,7 +4,7 @@ import Hero from './components/Hero';
 import SystemDescription from './components/SystemDescription';
 import MainFeatures from './components/MainFeatures';
 import ContactSection from './components/ContactSection';
-import Login from './pages/login';
+import Login from './pages/Login';
 import Cadastro from './pages/Cadastro';
 import Dashboard from './pages/Dashboard';
 
