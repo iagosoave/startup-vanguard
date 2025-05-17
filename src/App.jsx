@@ -6,6 +6,7 @@ import MainFeatures from './components/MainFeatures';
 import ContactSection from './components/ContactSection';
 import Login from './pages/Login';
 import Cadastro from './pages/Cadastro';
+import RecuperarSenha from './pages/RecuperarSenha';
 import Dashboard from './pages/Dashboard';
 
 const HomePage = () => {
@@ -26,6 +27,7 @@ const App = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/recuperar-senha" element={<RecuperarSenha />} />
         {/* O asterisco captura todas as subrotas do dashboard */}
         <Route path="/dashboard/*" element={<Dashboard />} />
       </Routes>

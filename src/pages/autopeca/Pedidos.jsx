@@ -6,6 +6,7 @@ const PedidosPage = () => {
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('todos');
   const [showOrderDetails, setShowOrderDetails] = useState(null);
+  const [openDropdowns, setOpenDropdowns] = useState({});
   
   useEffect(() => {
     // Carregar usuário atual
@@ -135,7 +136,7 @@ const PedidosPage = () => {
           compradorNome: 'Auto Elétrica Silva',
           data: '2025-05-01T10:00:00',
           valorTotal: 1890.30,
-          status: 'entregue',
+          status: 'pendente',
           formaPagamento: 'pix',
           itens: [
             { produtoId: '4', nome: 'Velas de Ignição - Conjunto com 4', quantidade: 7, precoUnitario: 120.50 },
@@ -148,9 +149,9 @@ const PedidosPage = () => {
             estado: 'SP',
             cep: '18040-060'
           },
-          rastreamento: 'BR135792468SC',
+          rastreamento: null,
           entregaEstimada: '2025-05-03',
-          entregaRealizada: '2025-05-01'
+          entregaRealizada: null
         }
       ];
       
@@ -172,7 +173,17 @@ const PedidosPage = () => {
           return {
             ...order,
             status,
-            entregaRealizada: new Date().toISOString().split('T')[0]
+            entregaRealizada: new Date().toISOString().split('T')[0],
+            rastreamento: order.rastreamento || `BR${Math.floor(Math.random() * 1000000000)}SC`
+          };
+        }
+        
+        // Se mudar para trânsito e não tiver rastreamento, gerar um
+        if (status === 'transito' && !order.rastreamento) {
+          return {
+            ...order,
+            status,
+            rastreamento: `BR${Math.floor(Math.random() * 1000000000)}SC`
           };
         }
         
@@ -186,10 +197,20 @@ const PedidosPage = () => {
     setOrders(updatedOrders);
     localStorage.setItem('autofacil_orders', JSON.stringify(updatedOrders));
     
+    // Fechar dropdown
+    setOpenDropdowns({});
+    
     // Se o modal de detalhes estiver aberto para este pedido, atualizá-lo também
     if (showOrderDetails && showOrderDetails.id === orderId) {
       setShowOrderDetails(updatedOrders.find(order => order.id === orderId));
     }
+  };
+
+  const toggleDropdown = (orderId) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [orderId]: !prev[orderId]
+    }));
   };
   
   const getStatusLabel = (status) => {
@@ -215,6 +236,16 @@ const PedidosPage = () => {
     
     return statusColors[status] || 'gray';
   };
+
+  const getNextStatus = (currentStatus) => {
+    const statusFlow = {
+      'pendente': { status: 'separacao', label: 'Iniciar Separação', color: 'blue' },
+      'separacao': { status: 'transito', label: 'Enviar para Entrega', color: 'purple' },
+      'transito': { status: 'entregue', label: 'Marcar como Entregue', color: 'green' }
+    };
+    
+    return statusFlow[currentStatus] || null;
+  };
   
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -235,67 +266,67 @@ const PedidosPage = () => {
   };
   
   return (
-    <div className="container mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Pedidos</h1>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-8 text-gray-900">Gerenciar Pedidos</h1>
       
       {/* Filtros */}
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-8 flex flex-wrap gap-3">
         <button
           onClick={() => setStatusFilter('todos')}
-          className={`px-4 py-2 text-sm rounded-full ${
+          className={`px-6 py-3 text-sm font-medium rounded-lg transition-all ${
             statusFilter === 'todos'
-              ? 'bg-red-100 text-red-800'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-red-500 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
           }`}
         >
-          Todos
+          Todos Pedidos
         </button>
         <button
           onClick={() => setStatusFilter('pendente')}
-          className={`px-4 py-2 text-sm rounded-full ${
+          className={`px-6 py-3 text-sm font-medium rounded-lg transition-all ${
             statusFilter === 'pendente'
-              ? 'bg-yellow-100 text-yellow-800'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-yellow-500 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
           }`}
         >
           Pendentes
         </button>
         <button
           onClick={() => setStatusFilter('separacao')}
-          className={`px-4 py-2 text-sm rounded-full ${
+          className={`px-6 py-3 text-sm font-medium rounded-lg transition-all ${
             statusFilter === 'separacao'
-              ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-blue-500 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
           }`}
         >
           Em Separação
         </button>
         <button
           onClick={() => setStatusFilter('transito')}
-          className={`px-4 py-2 text-sm rounded-full ${
+          className={`px-6 py-3 text-sm font-medium rounded-lg transition-all ${
             statusFilter === 'transito'
-              ? 'bg-purple-100 text-purple-800'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-purple-500 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
           }`}
         >
           Em Trânsito
         </button>
         <button
           onClick={() => setStatusFilter('entregue')}
-          className={`px-4 py-2 text-sm rounded-full ${
+          className={`px-6 py-3 text-sm font-medium rounded-lg transition-all ${
             statusFilter === 'entregue'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-green-500 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
           }`}
         >
           Entregues
         </button>
         <button
           onClick={() => setStatusFilter('cancelado')}
-          className={`px-4 py-2 text-sm rounded-full ${
+          className={`px-6 py-3 text-sm font-medium rounded-lg transition-all ${
             statusFilter === 'cancelado'
-              ? 'bg-red-100 text-red-800'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-red-500 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
           }`}
         >
           Cancelados
@@ -303,118 +334,163 @@ const PedidosPage = () => {
       </div>
       
       {/* Tabela de pedidos */}
-      <div className="bg-white shadow overflow-hidden rounded-md">
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Pedido
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Cliente
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Data
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Valor
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Entrega
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ações
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredOrders.length > 0 ? (
-              filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{order.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.compradorNome}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(order.data)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                    R$ {order.valorTotal.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-${getStatusColor(order.status)}-100 text-${getStatusColor(order.status)}-800`}>
-                      {getStatusLabel(order.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.status === 'entregue' ? (
-                      <span className="text-green-600">{formatDate(order.entregaRealizada)}</span>
-                    ) : (
-                      <span>Prev: {formatDate(order.entregaEstimada)}</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={() => setShowOrderDetails(order)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Detalhes
-                      </button>
-                      {order.status !== 'entregue' && order.status !== 'cancelado' && (
-                        <div className="relative group">
-                          <button className="text-gray-600 hover:text-gray-900">
-                            Atualizar
-                          </button>
-                          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden group-hover:block z-10">
-                            <div className="py-1" role="menu" aria-orientation="vertical">
-                              {order.status === 'pendente' && (
-                                <button
-                                  onClick={() => updateOrderStatus(order.id, 'separacao')}
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                >
-                                  Iniciar Separação
-                                </button>
-                              )}
-                              {order.status === 'separacao' && (
-                                <button
-                                  onClick={() => updateOrderStatus(order.id, 'transito')}
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                >
-                                  Enviar para Entrega
-                                </button>
-                              )}
-                              {order.status === 'transito' && (
-                                <button
-                                  onClick={() => updateOrderStatus(order.id, 'entregue')}
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                >
-                                  Marcar como Entregue
-                                </button>
-                              )}
-                              <button
-                                onClick={() => updateOrderStatus(order.id, 'cancelado')}
-                                className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
-                              >
-                                Cancelar Pedido
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+              filteredOrders.map((order) => {
+                const nextStatus = getNextStatus(order.status);
+                
+                return (
+                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                      #{order.id}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {order.compradorNome}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(order.data)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                      R$ {order.valorTotal.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-${getStatusColor(order.status)}-100 text-${getStatusColor(order.status)}-800`}>
+                        {getStatusLabel(order.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {order.status === 'entregue' ? (
+                        <span className="text-green-600 font-medium">{formatDate(order.entregaRealizada)}</span>
+                      ) : (
+                        <span>Prev: {formatDate(order.entregaEstimada)}</span>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center space-x-2">
+                        {/* Botão de visualizar detalhes */}
+                        <button
+                          onClick={() => setShowOrderDetails(order)}
+                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                          title="Ver detalhes"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          Detalhes
+                        </button>
+
+                        {/* Ações de status - Botões diretos ou dropdown */}
+                        {order.status !== 'entregue' && order.status !== 'cancelado' && (
+                          <>
+                            {/* Botão de próximo status (mais visível) */}
+                            {nextStatus && (
+                              <button
+                                onClick={() => updateOrderStatus(order.id, nextStatus.status)}
+                                className={`inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-${nextStatus.color}-600 rounded-lg hover:bg-${nextStatus.color}-700 transition-colors shadow-sm`}
+                                title={nextStatus.label}
+                              >
+                                {nextStatus.status === 'separacao' && (
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                  </svg>
+                                )}
+                                {nextStatus.status === 'transito' && (
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                                  </svg>
+                                )}
+                                {nextStatus.status === 'entregue' && (
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                )}
+                                {nextStatus.label}
+                              </button>
+                            )}
+
+                            {/* Dropdown para outras ações */}
+                            <div className="relative">
+                              <button
+                                onClick={() => toggleDropdown(order.id)}
+                                onBlur={() => setTimeout(() => setOpenDropdowns({}), 200)}
+                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                title="Mais ações"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                              
+                              {openDropdowns[order.id] && (
+                                <div className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
+                                  <div className="py-1" role="menu">
+                                    <button
+                                      onClick={() => updateOrderStatus(order.id, 'cancelado')}
+                                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      Cancelar Pedido
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+
+                        {/* Para pedidos finalizados, mostrar apenas detalhes */}
+                        {(order.status === 'entregue' || order.status === 'cancelado') && (
+                          <span className="text-xs text-gray-500 italic">
+                            {order.status === 'entregue' ? 'Pedido concluído' : 'Pedido cancelado'}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
-                  Nenhum pedido encontrado com o filtro selecionado.
+                <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                  <div className="text-center">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum pedido encontrado</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Não há pedidos com o filtro selecionado.
+                    </p>
+                  </div>
                 </td>
               </tr>
             )}
@@ -424,15 +500,15 @@ const PedidosPage = () => {
       
       {/* Modal de detalhes do pedido */}
       {showOrderDetails && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl transform transition-all sm:max-w-4xl w-full">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl transform transition-all sm:max-w-4xl w-full max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center border-b px-6 py-4">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-xl font-semibold text-gray-900">
                 Pedido #{showOrderDetails.id}
               </h3>
               <button
                 onClick={() => setShowOrderDetails(null)}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-gray-400 hover:text-gray-500 transition-colors"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -440,10 +516,10 @@ const PedidosPage = () => {
               </button>
             </div>
             
-            <div className="px-6 py-4 max-h-[70vh] overflow-y-auto">
+            <div className="px-6 py-4 overflow-y-auto flex-1">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className="border rounded-md p-4">
-                  <h4 className="text-sm font-medium text-gray-500 mb-2">Informações do Pedido</h4>
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <h4 className="text-sm font-medium text-gray-500 mb-3">Informações do Pedido</h4>
                   <div className="space-y-2">
                     <div>
                       <span className="text-sm text-gray-500">Cliente:</span>
@@ -468,8 +544,8 @@ const PedidosPage = () => {
                   </div>
                 </div>
                 
-                <div className="border rounded-md p-4">
-                  <h4 className="text-sm font-medium text-gray-500 mb-2">Endereço de Entrega</h4>
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <h4 className="text-sm font-medium text-gray-500 mb-3">Endereço de Entrega</h4>
                   <div className="space-y-2">
                     <p className="font-medium">{showOrderDetails.endereco.rua}</p>
                     <p>{showOrderDetails.endereco.cidade}, {showOrderDetails.endereco.estado}</p>
@@ -477,12 +553,12 @@ const PedidosPage = () => {
                   </div>
                 </div>
                 
-                <div className="border rounded-md p-4">
-                  <h4 className="text-sm font-medium text-gray-500 mb-2">Informações de Entrega</h4>
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <h4 className="text-sm font-medium text-gray-500 mb-3">Informações de Entrega</h4>
                   <div className="space-y-2">
                     <div>
                       <span className="text-sm text-gray-500">Código de Rastreio:</span>
-                      <p className="font-medium">{showOrderDetails.rastreamento || 'Não disponível'}</p>
+                      <p className="font-medium font-mono">{showOrderDetails.rastreamento || 'Não disponível'}</p>
                     </div>
                     <div>
                       <span className="text-sm text-gray-500">Previsão de Entrega:</span>
@@ -496,7 +572,7 @@ const PedidosPage = () => {
                 </div>
               </div>
               
-              <div className="border rounded-md overflow-hidden">
+              <div className="border rounded-lg overflow-hidden mb-6">
                 <h4 className="text-sm font-medium text-gray-500 px-4 py-3 bg-gray-50 border-b">
                   Itens do Pedido
                 </h4>
@@ -548,8 +624,8 @@ const PedidosPage = () => {
               
               {/* Informações de rastreamento */}
               {showOrderDetails.rastreamento && showOrderDetails.status !== 'pendente' && showOrderDetails.status !== 'separacao' && (
-                <div className="mt-6">
-                  <h4 className="text-sm font-medium text-gray-500 mb-3">Status da Entrega</h4>
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-gray-500 mb-4">Status da Entrega</h4>
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center" aria-hidden="true">
                       <div className="w-full border-t border-gray-300"></div>
@@ -580,48 +656,29 @@ const PedidosPage = () => {
             <div className="px-6 py-4 bg-gray-50 border-t flex justify-between">
               <button
                 onClick={() => setShowOrderDetails(null)}
-                className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Fechar
               </button>
               
               {showOrderDetails.status !== 'entregue' && showOrderDetails.status !== 'cancelado' && (
                 <div className="flex space-x-3">
-                  {showOrderDetails.status === 'pendente' && (
+                  {getNextStatus(showOrderDetails.status) && (
                     <button
                       onClick={() => {
-                        updateOrderStatus(showOrderDetails.id, 'separacao');
+                        const nextStatus = getNextStatus(showOrderDetails.status);
+                        updateOrderStatus(showOrderDetails.id, nextStatus.status);
                       }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className={`px-4 py-2 bg-${getNextStatus(showOrderDetails.status).color}-600 text-white rounded-md hover:bg-${getNextStatus(showOrderDetails.status).color}-700 transition-colors`}
                     >
-                      Iniciar Separação
-                    </button>
-                  )}
-                  {showOrderDetails.status === 'separacao' && (
-                    <button
-                      onClick={() => {
-                        updateOrderStatus(showOrderDetails.id, 'transito');
-                      }}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-                    >
-                      Enviar para Entrega
-                    </button>
-                  )}
-                  {showOrderDetails.status === 'transito' && (
-                    <button
-                      onClick={() => {
-                        updateOrderStatus(showOrderDetails.id, 'entregue');
-                      }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                    >
-                      Marcar como Entregue
+                      {getNextStatus(showOrderDetails.status).label}
                     </button>
                   )}
                   <button
                     onClick={() => {
                       updateOrderStatus(showOrderDetails.id, 'cancelado');
                     }}
-                    className="px-4 py-2 bg-white text-red-600 border border-red-300 rounded-md hover:bg-red-50"
+                    className="px-4 py-2 bg-white text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
                   >
                     Cancelar Pedido
                   </button>

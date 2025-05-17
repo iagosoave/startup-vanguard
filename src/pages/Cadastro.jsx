@@ -15,6 +15,14 @@ const Cadastro = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cadastroSuccess, setCadastroSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Limites de caracteres
+  const LIMITS = {
+    nomeEmpresa: 30,
+    email: 30
+  };
 
   // Simula um banco de dados local para os usuários cadastrados
   const [users, setUsers] = useState(() => {
@@ -29,9 +37,16 @@ const Cadastro = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Aplicar limite de caracteres para campos específicos
+    let newValue = value;
+    if (LIMITS[name] && value.length > LIMITS[name]) {
+      newValue = value.slice(0, LIMITS[name]);
+    }
+    
     setFormData(prevState => ({
       ...prevState,
-      [name]: value
+      [name]: newValue
     }));
     
     // Limpar mensagens de erro quando o usuário edita o campo
@@ -49,6 +64,8 @@ const Cadastro = () => {
     // Validação do nome da empresa
     if (!formData.nomeEmpresa.trim()) {
       newErrors.nomeEmpresa = "Nome da empresa é obrigatório";
+    } else if (formData.nomeEmpresa.trim().length < 2) {
+      newErrors.nomeEmpresa = "Nome da empresa deve ter pelo menos 2 caracteres";
     }
     
     // Validação do CNPJ (formato básico: XX.XXX.XXX/XXXX-XX)
@@ -183,16 +200,22 @@ const Cadastro = () => {
             <label htmlFor="nomeEmpresa" className="block text-sm font-medium text-gray-700 mb-1">
               Nome da Empresa
             </label>
-            <input
-              id="nomeEmpresa"
-              name="nomeEmpresa"
-              type="text"
-              required
-              value={formData.nomeEmpresa}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border ${errors.nomeEmpresa ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`}
-              placeholder="Nome da sua empresa"
-            />
+            <div className="relative">
+              <input
+                id="nomeEmpresa"
+                name="nomeEmpresa"
+                type="text"
+                required
+                value={formData.nomeEmpresa}
+                onChange={handleChange}
+                maxLength={LIMITS.nomeEmpresa}
+                className={`w-full px-4 py-3 border ${errors.nomeEmpresa ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`}
+                placeholder="Nome da sua empresa"
+              />
+              <div className="text-xs text-gray-500 mt-1 text-right">
+                {formData.nomeEmpresa.length}/{LIMITS.nomeEmpresa}
+              </div>
+            </div>
             {errors.nomeEmpresa && <p className="text-red-500 text-xs mt-1">{errors.nomeEmpresa}</p>}
           </div>
           
@@ -219,16 +242,22 @@ const Cadastro = () => {
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               Email
             </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`}
-              placeholder="seu@email.com"
-            />
+            <div className="relative">
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                maxLength={LIMITS.email}
+                className={`w-full px-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`}
+                placeholder="seu@email.com"
+              />
+              <div className="text-xs text-gray-500 mt-1 text-right">
+                {formData.email.length}/{LIMITS.email}
+              </div>
+            </div>
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
           
@@ -255,16 +284,34 @@ const Cadastro = () => {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Senha
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`}
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={formData.password}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 pr-12 border ${errors.password ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
           </div>
           
@@ -273,16 +320,34 @@ const Cadastro = () => {
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
               Confirmar Senha
             </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`}
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 pr-12 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+              >
+                {showConfirmPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
             {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
           </div>
           
