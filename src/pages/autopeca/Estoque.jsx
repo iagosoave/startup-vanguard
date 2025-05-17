@@ -76,7 +76,7 @@ const EstoquePage = () => {
           preco: 45.00,
           categoria: 'oleos',
           quantidadeEstoque: 200,
-          imagemUrl: 'https://via.placeholder.com/100x100.png?text=Oleo+Motor' // Placeholder example
+          imagemUrl: 'https://cdn.awsli.com.br/600x700/2648/2648682/produto/239295642d10d1c5f05.jpg' // Placeholder example
         },
         {
           id: '4',
@@ -86,7 +86,7 @@ const EstoquePage = () => {
           preco: 120.50,
           categoria: 'eletrica',
           quantidadeEstoque: 60,
-          imagemUrl: 'https://via.placeholder.com/100x100.png?text=Velas' // Placeholder example
+          imagemUrl: 'https://m.media-amazon.com/images/I/71ZiBaDF4yS._AC_UF1000,1000_QL80_.jpg' // Placeholder example
         },
         {
           id: '5',
@@ -96,7 +96,7 @@ const EstoquePage = () => {
           preco: 249.90,
           categoria: 'suspensao',
           quantidadeEstoque: 30,
-          imagemUrl: 'https://via.placeholder.com/100x100.png?text=Amortecedor' // Placeholder example
+          imagemUrl: 'https://images.cws.digital/produtos/gg/54/08/amortecedor-dianteiro-turbogas-9390854-1660600283778.jpg' // Placeholder example
         }
       ];
       savedProducts = [...savedProducts, ...exampleProducts.filter(ex => !savedProducts.find(sp => sp.id === ex.id))]; // Avoid duplicates

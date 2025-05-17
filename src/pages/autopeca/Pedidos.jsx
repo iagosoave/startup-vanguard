@@ -7,18 +7,21 @@ const PedidosPage = () => {
   const [statusFilter, setStatusFilter] = useState('todos');
   const [showOrderDetails, setShowOrderDetails] = useState(null);
   const [openDropdowns, setOpenDropdowns] = useState({});
-  
+
   useEffect(() => {
     // Carregar usuário atual
+    let user = null;
     const userInfo = sessionStorage.getItem('autofacil_currentUser');
     if (userInfo) {
-      setCurrentUser(JSON.parse(userInfo));
+      user = JSON.parse(userInfo);
+      setCurrentUser(user);
     }
-    
+
     // Carregar pedidos do localStorage ou criar pedidos de exemplo
-    loadOrders();
+    // Pass the resolved user object to loadOrders
+    loadOrders(user);
   }, []);
-  
+
   useEffect(() => {
     // Filtrar pedidos com base no filtro de status
     if (statusFilter === 'todos') {
@@ -28,17 +31,18 @@ const PedidosPage = () => {
       setFilteredOrders(filtered);
     }
   }, [statusFilter, orders]);
-  
-  const loadOrders = () => {
+
+  // Modified to accept userForExamples for correct vendedorId in example data
+  const loadOrders = (userForExamples) => {
     // Tentar carregar pedidos do localStorage
     let savedOrders = JSON.parse(localStorage.getItem('autofacil_orders') || '[]');
-    
+
     // Se não houver pedidos, criar pedidos de exemplo
     if (savedOrders.length === 0) {
       const exampleOrders = [
         {
           id: '958412',
-          vendedorId: currentUser?.id || 'example_user',
+          vendedorId: userForExamples?.id || 'example_user', // Use passed user
           compradorId: 'cliente_1',
           compradorNome: 'Oficina São Pedro',
           data: '2025-05-04T14:30:00',
@@ -61,7 +65,7 @@ const PedidosPage = () => {
         },
         {
           id: '958411',
-          vendedorId: currentUser?.id || 'example_user',
+          vendedorId: userForExamples?.id || 'example_user', // Use passed user
           compradorId: 'cliente_2',
           compradorNome: 'Auto Center Sorocaba',
           data: '2025-05-03T09:15:00',
@@ -84,7 +88,7 @@ const PedidosPage = () => {
         },
         {
           id: '958410',
-          vendedorId: currentUser?.id || 'example_user',
+          vendedorId: userForExamples?.id || 'example_user', // Use passed user
           compradorId: 'cliente_3',
           compradorNome: 'Mecânica do João',
           data: '2025-05-03T11:45:00',
@@ -108,7 +112,7 @@ const PedidosPage = () => {
         },
         {
           id: '958409',
-          vendedorId: currentUser?.id || 'example_user',
+          vendedorId: userForExamples?.id || 'example_user', // Use passed user
           compradorId: 'cliente_4',
           compradorNome: 'Center Car Ltda',
           data: '2025-05-02T16:20:00',
@@ -131,7 +135,7 @@ const PedidosPage = () => {
         },
         {
           id: '958408',
-          vendedorId: currentUser?.id || 'example_user',
+          vendedorId: userForExamples?.id || 'example_user', // Use passed user
           compradorId: 'cliente_5',
           compradorNome: 'Auto Elétrica Silva',
           data: '2025-05-01T10:00:00',
@@ -154,55 +158,51 @@ const PedidosPage = () => {
           entregaRealizada: null
         }
       ];
-      
+
       // Salvar no localStorage
       localStorage.setItem('autofacil_orders', JSON.stringify(exampleOrders));
-      
+
       setOrders(exampleOrders);
     } else {
       setOrders(savedOrders);
     }
   };
-  
+
   const updateOrderStatus = (orderId, status) => {
     // Atualizar status do pedido
     const updatedOrders = orders.map(order => {
       if (order.id === orderId) {
+        let updatedOrderData = { ...order, status };
+
         // Se o status for 'entregue', atualizar a data de entrega realizada
         if (status === 'entregue') {
-          return {
-            ...order,
-            status,
-            entregaRealizada: new Date().toISOString().split('T')[0],
-            rastreamento: order.rastreamento || `BR${Math.floor(Math.random() * 1000000000)}SC`
-          };
+          updatedOrderData.entregaRealizada = new Date().toISOString().split('T')[0];
+          // Garante que há um código de rastreamento ao marcar como entregue, se não houver
+          if (!updatedOrderData.rastreamento) {
+            updatedOrderData.rastreamento = `BR${Math.floor(Math.random() * 1000000000)}SC`;
+          }
         }
         
         // Se mudar para trânsito e não tiver rastreamento, gerar um
         if (status === 'transito' && !order.rastreamento) {
-          return {
-            ...order,
-            status,
-            rastreamento: `BR${Math.floor(Math.random() * 1000000000)}SC`
-          };
+          updatedOrderData.rastreamento = `BR${Math.floor(Math.random() * 1000000000)}SC`;
         }
         
-        // Para os outros status, apenas atualizar o status
-        return { ...order, status };
+        return updatedOrderData;
       }
       return order;
     });
-    
+
     // Atualizar estado e localStorage
     setOrders(updatedOrders);
     localStorage.setItem('autofacil_orders', JSON.stringify(updatedOrders));
-    
+
     // Fechar dropdown
     setOpenDropdowns({});
-    
+
     // Se o modal de detalhes estiver aberto para este pedido, atualizá-lo também
     if (showOrderDetails && showOrderDetails.id === orderId) {
-      setShowOrderDetails(updatedOrders.find(order => order.id === orderId));
+      setShowOrderDetails(updatedOrders.find(o => o.id === orderId));
     }
   };
 
@@ -212,7 +212,7 @@ const PedidosPage = () => {
       [orderId]: !prev[orderId]
     }));
   };
-  
+
   const getStatusLabel = (status) => {
     const statusLabels = {
       'pendente': 'Pendente',
@@ -221,10 +221,10 @@ const PedidosPage = () => {
       'entregue': 'Entregue',
       'cancelado': 'Cancelado'
     };
-    
+
     return statusLabels[status] || status;
   };
-  
+
   const getStatusColor = (status) => {
     const statusColors = {
       'pendente': 'yellow',
@@ -233,7 +233,7 @@ const PedidosPage = () => {
       'entregue': 'green',
       'cancelado': 'red'
     };
-    
+
     return statusColors[status] || 'gray';
   };
 
@@ -243,17 +243,19 @@ const PedidosPage = () => {
       'separacao': { status: 'transito', label: 'Enviar para Entrega', color: 'purple' },
       'transito': { status: 'entregue', label: 'Marcar como Entregue', color: 'green' }
     };
-    
+
     return statusFlow[currentStatus] || null;
   };
-  
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    
+
     const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
+    // Ensure date is valid before formatting
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' }); // Added timeZone UTC to avoid off-by-one day issues
   };
-  
+
   const formatPaymentMethod = (method) => {
     const methods = {
       'cartao': 'Cartão de Crédito',
@@ -261,14 +263,14 @@ const PedidosPage = () => {
       'pix': 'PIX',
       'transferencia': 'Transferência'
     };
-    
+
     return methods[method] || method;
   };
-  
+
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8 text-gray-900">Gerenciar Pedidos</h1>
-      
+
       {/* Filtros */}
       <div className="mb-8 flex flex-wrap gap-3">
         <button
@@ -332,9 +334,10 @@ const PedidosPage = () => {
           Cancelados
         </button>
       </div>
-      
+
       {/* Tabela de pedidos */}
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+      {/* Added overflow-x-auto here for horizontal scrolling on smaller screens */}
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -356,7 +359,7 @@ const PedidosPage = () => {
               <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Entrega
               </th>
-              <th scope="col" className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[280px]"> {/* Min width for actions column */}
                 Ações
               </th>
             </tr>
@@ -364,8 +367,8 @@ const PedidosPage = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredOrders.length > 0 ? (
               filteredOrders.map((order) => {
-                const nextStatus = getNextStatus(order.status);
-                
+                const nextStatusInfo = getNextStatus(order.status); // Renamed for clarity
+
                 return (
                   <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
@@ -411,28 +414,28 @@ const PedidosPage = () => {
                         {order.status !== 'entregue' && order.status !== 'cancelado' && (
                           <>
                             {/* Botão de próximo status (mais visível) */}
-                            {nextStatus && (
+                            {nextStatusInfo && (
                               <button
-                                onClick={() => updateOrderStatus(order.id, nextStatus.status)}
-                                className={`inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-${nextStatus.color}-600 rounded-lg hover:bg-${nextStatus.color}-700 transition-colors shadow-sm`}
-                                title={nextStatus.label}
+                                onClick={() => updateOrderStatus(order.id, nextStatusInfo.status)}
+                                className={`inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-${nextStatusInfo.color}-600 rounded-lg hover:bg-${nextStatusInfo.color}-700 transition-colors shadow-sm`}
+                                title={nextStatusInfo.label}
                               >
-                                {nextStatus.status === 'separacao' && (
+                                {nextStatusInfo.status === 'separacao' && (
                                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                   </svg>
                                 )}
-                                {nextStatus.status === 'transito' && (
+                                {nextStatusInfo.status === 'transito' && (
                                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
                                   </svg>
                                 )}
-                                {nextStatus.status === 'entregue' && (
+                                {nextStatusInfo.status === 'entregue' && (
                                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
                                 )}
-                                {nextStatus.label}
+                                {nextStatusInfo.label}
                               </button>
                             )}
 
@@ -440,24 +443,25 @@ const PedidosPage = () => {
                             <div className="relative">
                               <button
                                 onClick={() => toggleDropdown(order.id)}
-                                onBlur={() => setTimeout(() => setOpenDropdowns({}), 200)}
+                                onBlur={() => setTimeout(() => setOpenDropdowns(prev => ({...prev, [order.id]: false })), 200)} // Close specific dropdown
                                 className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                                 title="Mais ações"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                               </button>
                               
                               {openDropdowns[order.id] && (
                                 <div className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
-                                  <div className="py-1" role="menu">
+                                  <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                                     <button
                                       onClick={() => updateOrderStatus(order.id, 'cancelado')}
-                                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                                      role="menuitem"
                                     >
-                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                       </svg>
                                       Cancelar Pedido
                                     </button>
@@ -470,7 +474,7 @@ const PedidosPage = () => {
 
                         {/* Para pedidos finalizados, mostrar apenas detalhes */}
                         {(order.status === 'entregue' || order.status === 'cancelado') && (
-                          <span className="text-xs text-gray-500 italic">
+                          <span className="text-xs text-gray-500 italic ml-2"> {/* Added ml-2 for spacing */}
                             {order.status === 'entregue' ? 'Pedido concluído' : 'Pedido cancelado'}
                           </span>
                         )}
@@ -483,12 +487,12 @@ const PedidosPage = () => {
               <tr>
                 <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                   <div className="text-center">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                     <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum pedido encontrado</h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      Não há pedidos com o filtro selecionado.
+                      Não há pedidos com o filtro selecionado ou nenhum pedido cadastrado.
                     </p>
                   </div>
                 </td>
@@ -566,7 +570,7 @@ const PedidosPage = () => {
                     </div>
                     <div>
                       <span className="text-sm text-gray-500">Data de Entrega:</span>
-                      <p className="font-medium">{formatDate(showOrderDetails.entregaRealizada) || 'Não entregue'}</p>
+                      <p className="font-medium">{formatDate(showOrderDetails.entregaRealizada) || (showOrderDetails.status === 'cancelado' ? 'Cancelado' : 'Não entregue')}</p>
                     </div>
                   </div>
                 </div>
@@ -623,37 +627,44 @@ const PedidosPage = () => {
               </div>
               
               {/* Informações de rastreamento */}
-              {showOrderDetails.rastreamento && showOrderDetails.status !== 'pendente' && showOrderDetails.status !== 'separacao' && (
+              {showOrderDetails.rastreamento && showOrderDetails.status !== 'pendente' && showOrderDetails.status !== 'separacao' && showOrderDetails.status !== 'cancelado' && (
                 <div className="mb-6">
                   <h4 className="text-sm font-medium text-gray-500 mb-4">Status da Entrega</h4>
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                      <div className="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div className="relative flex justify-between">
-                      <div className="flex flex-col items-center">
-                        <div className={`h-5 w-5 rounded-full ${showOrderDetails.status !== 'pendente' ? 'bg-green-500' : 'bg-gray-200'} border-white`}></div>
-                        <div className="text-xs font-medium mt-2">Pedido Recebido</div>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className={`h-5 w-5 rounded-full ${showOrderDetails.status !== 'pendente' ? 'bg-green-500' : 'bg-gray-200'} border-white`}></div>
-                        <div className="text-xs font-medium mt-2">Em Separação</div>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className={`h-5 w-5 rounded-full ${showOrderDetails.status === 'transito' || showOrderDetails.status === 'entregue' ? 'bg-green-500' : 'bg-gray-200'} border-white`}></div>
-                        <div className="text-xs font-medium mt-2">Em Trânsito</div>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className={`h-5 w-5 rounded-full ${showOrderDetails.status === 'entregue' ? 'bg-green-500' : 'bg-gray-200'} border-white`}></div>
-                        <div className="text-xs font-medium mt-2">Entregue</div>
-                      </div>
-                    </div>
-                  </div>
+                  <ol className="relative text-gray-500 border-l border-gray-200 dark:border-gray-700 dark:text-gray-400">                  
+                    <li className="mb-6 ml-6">            
+                        <span className={`absolute flex items-center justify-center w-4 h-4 rounded-full -left-2 ring-4 ring-white
+                                        ${showOrderDetails.status !== 'pendente' ? 'bg-green-500' : 'bg-gray-300'}`}>
+                        </span>
+                        <h3 className="font-medium leading-tight">Pedido Recebido</h3>
+                        {/* <p className="text-sm">Data</p> */}
+                    </li>
+                    <li className="mb-6 ml-6">
+                        <span className={`absolute flex items-center justify-center w-4 h-4 rounded-full -left-2 ring-4 ring-white
+                                        ${showOrderDetails.status !== 'pendente' ? 'bg-green-500' : 'bg-gray-300'}`}>
+                        </span>
+                        <h3 className="font-medium leading-tight">Em Separação</h3>
+                    </li>
+                    <li className="mb-6 ml-6">
+                        <span className={`absolute flex items-center justify-center w-4 h-4 rounded-full -left-2 ring-4 ring-white
+                                        ${showOrderDetails.status === 'transito' || showOrderDetails.status === 'entregue' ? 'bg-green-500' : 'bg-gray-300'}`}>
+                        </span>
+                        <h3 className="font-medium leading-tight">Em Trânsito</h3>
+                    </li>
+                    <li className="ml-6">
+                        <span className={`absolute flex items-center justify-center w-4 h-4 rounded-full -left-2 ring-4 ring-white
+                                        ${showOrderDetails.status === 'entregue' ? 'bg-green-500' : 'bg-gray-300'}`}>
+                        </span>
+                        <h3 className="font-medium leading-tight">Entregue</h3>
+                        {showOrderDetails.status === 'entregue' && showOrderDetails.entregaRealizada && (
+                            <p className="text-sm">Em {formatDate(showOrderDetails.entregaRealizada)}</p>
+                        )}
+                    </li>
+                  </ol>
                 </div>
               )}
             </div>
             
-            <div className="px-6 py-4 bg-gray-50 border-t flex justify-between">
+            <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center">
               <button
                 onClick={() => setShowOrderDetails(null)}
                 className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
@@ -666,12 +677,14 @@ const PedidosPage = () => {
                   {getNextStatus(showOrderDetails.status) && (
                     <button
                       onClick={() => {
-                        const nextStatus = getNextStatus(showOrderDetails.status);
-                        updateOrderStatus(showOrderDetails.id, nextStatus.status);
+                        const nextStatusModal = getNextStatus(showOrderDetails.status);
+                        if (nextStatusModal) { // Check if nextStatusModal is not null
+                            updateOrderStatus(showOrderDetails.id, nextStatusModal.status);
+                        }
                       }}
-                      className={`px-4 py-2 bg-${getNextStatus(showOrderDetails.status).color}-600 text-white rounded-md hover:bg-${getNextStatus(showOrderDetails.status).color}-700 transition-colors`}
+                      className={`px-4 py-2 bg-${getNextStatus(showOrderDetails.status)?.color}-600 text-white rounded-md hover:bg-${getNextStatus(showOrderDetails.status)?.color}-700 transition-colors`}
                     >
-                      {getNextStatus(showOrderDetails.status).label}
+                      {getNextStatus(showOrderDetails.status)?.label}
                     </button>
                   )}
                   <button
