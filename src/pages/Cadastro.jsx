@@ -35,13 +35,45 @@ const Cadastro = () => {
     localStorage.setItem('autofacil_users', JSON.stringify(users));
   }, [users]);
 
+  // Função para aplicar máscara no telefone
+  const formatPhoneNumber = (value) => {
+    // Remove todos os caracteres não numéricos
+    const numbers = value.replace(/\D/g, '');
+    
+    // Aplica a máscara baseada no tamanho
+    if (numbers.length <= 2) {
+      return `(${numbers}`;
+    } else if (numbers.length <= 7) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    } else if (numbers.length <= 11) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+    } else {
+      // Limita a 11 dígitos (formato: (XX) XXXXX-XXXX)
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+    }
+  };
+
+  // Função para validar telefone
+  const validatePhone = (phone) => {
+    // Remove caracteres não numéricos para validação
+    const numbers = phone.replace(/\D/g, '');
+    // Aceita telefones com 10 ou 11 dígitos
+    return numbers.length >= 10 && numbers.length <= 11;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Aplicar limite de caracteres para campos específicos
     let newValue = value;
-    if (LIMITS[name] && value.length > LIMITS[name]) {
-      newValue = value.slice(0, LIMITS[name]);
+    
+    // Tratamento especial para telefone
+    if (name === 'telefone') {
+      newValue = formatPhoneNumber(value);
+    } else {
+      // Aplicar limite de caracteres para outros campos específicos
+      if (LIMITS[name] && value.length > LIMITS[name]) {
+        newValue = value.slice(0, LIMITS[name]);
+      }
     }
     
     setFormData(prevState => ({
@@ -84,6 +116,13 @@ const Cadastro = () => {
       newErrors.email = "Email inválido";
     } else if (users.some(user => user.email === formData.email)) {
       newErrors.email = "Este email já está registrado";
+    }
+    
+    // Validação do telefone
+    if (!formData.telefone.trim()) {
+      newErrors.telefone = "Telefone é obrigatório";
+    } else if (!validatePhone(formData.telefone)) {
+      newErrors.telefone = "Telefone inválido. Use o formato: (XX) XXXXX-XXXX";
     }
     
     // Validação da senha

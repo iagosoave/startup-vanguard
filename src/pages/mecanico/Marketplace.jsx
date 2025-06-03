@@ -9,6 +9,8 @@ const MarketplacePage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('todos');
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showProductModal, setShowProductModal] = useState(false);
   const [checkoutData, setCheckoutData] = useState({
     formaPagamento: 'cartao',
     endereco: {
@@ -67,52 +69,97 @@ const MarketplacePage = () => {
     let productsFromStorage = JSON.parse(localStorage.getItem('autofacil_products') || '[]');
 
     // Fallback seed for Marketplace if localStorage is completely empty.
-    // This is a minimal seed and should ideally not conflict with EstoquePage's more comprehensive seed.
+    // Using the same products as EstoquePage for consistency
     if (productsFromStorage.length === 0) {
-      console.warn('Marketplace: No products found in localStorage. Seeding minimal fallback products.');
+      console.warn('Marketplace: No products found in localStorage. Seeding fallback products.');
       const marketplaceFallbackProducts = [
         {
-          id: "mkt_prod1", // Different IDs than Estoque seed
-          nome: "Óleo de Motor Sintético 5W-30 (Mkt)",
-          descricao: "Óleo lubrificante sintético de alto desempenho para motores.",
-          preco: 58.90,
-          categoria: "oleos",
-          vendedorId: "vendedor_fallback_mkt",
-          imagemUrl: "https://images.tcdn.com.br/img/img_prod/1027273/oleo_de_motor_mobil_super_5w30_sintetico_api_sp_e_dexos_1_407_2_d22001f9d0a6d6d243be9e7e80c6243f.jpg"
+          id: '1',
+          vendedorId: currentUser?.id || 'example_user',
+          nome: 'Filtro de Óleo Premium',
+          descricao: 'Filtro de óleo de alta qualidade compatível com diversos modelos de veículos.',
+          preco: 25.90,
+          categoria: 'filtros',
+          quantidadeEstoque: 150,
+          imagemUrl: 'https://m.media-amazon.com/images/I/61zZpX0P+kL._AC_UF1000,1000_QL80_.jpg',
+          vendedorNome: 'Auto Peças Silva',  // Adicionar esta linha em cada produto
+          
         },
         {
-          id: "mkt_prod2",
-          nome: "Filtro de Óleo PremiumTech (Mkt)",
-          descricao: "Filtro de óleo com tecnologia avançada de retenção de partículas.",
-          preco: 27.50,
-          categoria: "filtros",
-          vendedorId: "vendedor_fallback_mkt",
-          imagemUrl: "https://images.tcdn.com.br/img/img_prod/771256/filtro_oleo_tecfil_psl123_ford_f150_f1000_f4000_mwm_agrale_40365_1_4af130e8f59d6a003836d80221163b7a.jpg"
+          id: '2',
+          vendedorId: currentUser?.id || 'example_user',
+          nome: 'Kit de Pastilhas de Freio',
+          descricao: 'Kit completo de pastilhas de freio para veículos de passeio. Alta durabilidade.',
+          preco: 89.90,
+          categoria: 'freios',
+          quantidadeEstoque: 75,
+          vendedorNome: 'Auto Peças Silva',  // Adicionar esta linha em cada produto
+          imagemUrl: 'https://d2q38n0ohsv27h.cloudfront.net/Custom/Content/Products/20/15/2015606_kit-pastilha-e-disco-de-freio-dianteiro-ventilado-acdelco-cruze-1-4-turbo-2016-a-2023_z2_638295873640452568.webp'
         },
+        {
+          id: '3',
+          vendedorId: currentUser?.id || 'example_user',
+          nome: 'Óleo de Motor Sintético 5W30',
+          descricao: 'Óleo sintético de alta performance. Embalagem com 1 litro.',
+          preco: 45.00,
+          categoria: 'oleos',
+          quantidadeEstoque: 200,
+          vendedorNome: 'Auto Peças Silva',  // Adicionar esta linha em cada produto
+          imagemUrl: 'https://cdn.awsli.com.br/600x700/2648/2648682/produto/239295642d10d1c5f05.jpg'
+        },
+        {
+          id: '4',
+          vendedorId: currentUser?.id || 'example_user',
+          nome: 'Velas de Ignição - Conjunto com 4',
+          descricao: 'Conjunto com 4 velas de ignição de platina, compatível com motores flex.',
+          preco: 120.50,
+          categoria: 'eletrica',
+          quantidadeEstoque: 60,
+          vendedorNome: 'Auto Peças Silva',  // Adicionar esta linha em cada produto
+          imagemUrl: 'https://m.media-amazon.com/images/I/71ZiBaDF4yS._AC_UF1000,1000_QL80_.jpg'
+        },
+        {
+          id: '5',
+          vendedorId: currentUser?.id || 'example_user',
+          nome: 'Amortecedor Dianteiro',
+          descricao: 'Amortecedor dianteiro para veículos compactos. Garantia de 1 ano.',
+          preco: 249.90,
+          categoria: 'suspensao',
+          quantidadeEstoque: 30,
+          vendedorNome: 'Auto Peças Silva',  // Adicionar esta linha em cada produto
+          imagemUrl: 'https://images.cws.digital/produtos/gg/54/08/amortecedor-dianteiro-turbogas-9390854-1660600283778.jpg'
+        }
       ];
-      // IMPORTANT: This write to localStorage could be contentious if EstoquePage is the primary manager.
-      // For a strict "Marketplace only reads" approach, remove the next line and setProducts directly.
-      // localStorage.setItem('autofacil_products', JSON.stringify(marketplaceFallbackProducts));
       productsFromStorage = marketplaceFallbackProducts;
     }
     setProducts(productsFromStorage);
   };
 
-
-  const addToCart = (product) => {
-    setCart(prevCart => {
-      const existingProductIndex = prevCart.findIndex(item => item.id === product.id);
-      let updatedCart;
-      if (existingProductIndex >= 0) {
-        updatedCart = [...prevCart];
-        updatedCart[existingProductIndex].quantidade += 1;
-      } else {
-        updatedCart = [...prevCart, { ...product, quantidade: 1, vendedorId: product.vendedorId }]; // Ensure vendedorId is in cart item
-      }
-      localStorage.setItem('autofacil_cart', JSON.stringify(updatedCart));
-      return updatedCart;
-    });
+  const handleProductClick = (product) => {
+    setSelectedProduct(product);
+    setShowProductModal(true);
   };
+
+const addToCart = (product) => {
+  setCart(prevCart => {
+    const existingProductIndex = prevCart.findIndex(item => item.id === product.id);
+    let updatedCart;
+    if (existingProductIndex >= 0) {
+      updatedCart = [...prevCart];
+      updatedCart[existingProductIndex].quantidade += 1;
+    } else {
+      // IMPORTANTE: Salvar vendedorId e vendedorNome no carrinho
+      updatedCart = [...prevCart, { 
+        ...product, 
+        quantidade: 1, 
+        vendedorId: product.vendedorId || 'vendor_default',
+        vendedorNome: product.vendedorNome || 'Fornecedor Padrão'
+      }];
+    }
+    localStorage.setItem('autofacil_cart', JSON.stringify(updatedCart));
+    return updatedCart;
+  });
+};
 
   const removeFromCart = (productId) => {
     setCart(prevCart => {
@@ -161,58 +208,75 @@ const MarketplacePage = () => {
     }
   };
 
-  const handleCheckout = (e) => {
-    e.preventDefault();
-    if (!cart.length) {
-      alert('Seu carrinho está vazio!');
-      return;
+ const handleCheckout = (e) => {
+  e.preventDefault();
+  if (!cart.length) {
+    alert('Seu carrinho está vazio!');
+    return;
+  }
+  
+  const { endereco, formaPagamento } = checkoutData;
+  if (!endereco.rua || !endereco.cidade || !endereco.estado || !endereco.cep || !formaPagamento) {
+    alert('Por favor, preencha todos os campos obrigatórios.');
+    return;
+  }
+
+  // Agrupar itens por vendedor
+  const ordersByVendedor = cart.reduce((acc, item) => {
+    const vendedorId = item.vendedorId || 'vendor_default';
+    const vendedorNome = item.vendedorNome || 'Fornecedor Padrão';
+    
+    if (!acc[vendedorId]) {
+      acc[vendedorId] = { 
+        vendedorId, 
+        vendedorNome,
+        itens: [], 
+        valorTotal: 0 
+      };
     }
-    const { endereco, formaPagamento } = checkoutData;
-    if (!endereco.rua || !endereco.cidade || !endereco.estado || !endereco.cep || !formaPagamento) {
-      alert('Por favor, preencha todos os campos obrigatórios de endereço e forma de pagamento.');
-      return;
-    }
-
-    const ordersByVendedor = cart.reduce((acc, item) => {
-        const vendedorId = item.vendedorId || 'default_vendedor_mkt'; // Ensure product in cart has vendedorId
-        if (!acc[vendedorId]) {
-            acc[vendedorId] = { vendedorId, itens: [], valorTotal: 0 };
-        }
-        acc[vendedorId].itens.push({
-            produtoId: item.id, nome: item.nome, quantidade: item.quantidade, precoUnitario: item.preco, imagemUrl: item.imagemUrl
-        });
-        acc[vendedorId].valorTotal += item.preco * item.quantidade;
-        return acc;
-    }, {});
-
-    const existingOrders = JSON.parse(localStorage.getItem('autofacil_orders') || '[]');
-    const newOrdersCreatedIds = [];
-
-    Object.values(ordersByVendedor).forEach(vendedorOrder => {
-        const newOrder = {
-            id: `ord_${Date.now().toString()}_${Math.random().toString(36).substr(2, 5)}`,
-            compradorId: currentUser?.id || 'default_comprador',
-            compradorNome: currentUser?.nomeEmpresa || currentUser?.nome || 'Usuário Anônimo',
-            vendedorId: vendedorOrder.vendedorId,
-            data: new Date().toISOString(),
-            valorTotal: vendedorOrder.valorTotal,
-            status: 'pendente',
-            formaPagamento,
-            itens: vendedorOrder.itens,
-            endereco,
-            rastreamento: null,
-            entregaEstimada: new Date(Date.now() + (3 + Math.floor(Math.random() * 5)) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            entregaRealizada: null
-        };
-        existingOrders.push(newOrder);
-        newOrdersCreatedIds.push(newOrder.id);
+    
+    acc[vendedorId].itens.push({
+      produtoId: item.id, 
+      nome: item.nome, 
+      quantidade: item.quantidade, 
+      precoUnitario: item.preco, 
+      imagemUrl: item.imagemUrl
     });
+    acc[vendedorId].valorTotal += item.preco * item.quantidade;
+    return acc;
+  }, {});
 
-    localStorage.setItem('autofacil_orders', JSON.stringify(existingOrders));
-    clearCart();
-    setShowCheckout(false);
-    alert(`Pedido(s) realizado(s) com sucesso! ID(s): ${newOrdersCreatedIds.join(', ')}`);
-  };
+  const existingOrders = JSON.parse(localStorage.getItem('autofacil_orders') || '[]');
+  const newOrdersCreatedIds = [];
+
+  Object.values(ordersByVendedor).forEach(vendedorOrder => {
+    const orderId = `ord_${Date.now().toString()}_${Math.random().toString(36).substr(2, 5)}`;
+    const newOrder = {
+      id: orderId,
+      compradorId: currentUser?.id || 'default_user',
+      compradorNome: currentUser?.nomeEmpresa || currentUser?.nome || 'Usuário',
+      vendedorId: vendedorOrder.vendedorId,
+      vendedorNome: vendedorOrder.vendedorNome,
+      data: new Date().toISOString(),
+      valorTotal: vendedorOrder.valorTotal,
+      status: 'pendente',
+      formaPagamento,
+      itens: vendedorOrder.itens,
+      endereco: { ...endereco },
+      rastreamento: `BR${Math.random().toString().substr(2, 9)}SC`,
+      entregaEstimada: new Date(Date.now() + (3 + Math.floor(Math.random() * 5)) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      entregaRealizada: null
+    };
+    
+    existingOrders.push(newOrder);
+    newOrdersCreatedIds.push(orderId);
+  });
+
+  localStorage.setItem('autofacil_orders', JSON.stringify(existingOrders));
+  clearCart();
+  setShowCheckout(false);
+  alert(`Pedido(s) realizado(s) com sucesso! ID(s): ${newOrdersCreatedIds.join(', ')}`);
+};
 
   const getCategoryLabel = (category) => {
     const categories = {
@@ -279,7 +343,10 @@ const MarketplacePage = () => {
         {filteredProducts.length > 0 ? (
           filteredProducts.map(product => (
             <div key={product.id} className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col transition-transform hover:scale-105 duration-300">
-              <div className="h-48 w-full bg-gray-200 relative group">
+              <div 
+                className="h-48 w-full bg-gray-200 relative group cursor-pointer"
+                onClick={() => handleProductClick(product)}
+              >
                 <img
                   src={product.imagemUrl || "https://via.placeholder.com/400x300.png?text=Sem+Imagem"}
                   alt={product.nome}
@@ -291,13 +358,16 @@ const MarketplacePage = () => {
                     {getCategoryLabel(product.categoria)}
                   </span>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
-                  <p className="text-sm truncate">{product.descricao}</p>
-                </div>
               </div>
               <div className="p-4 flex-1 flex flex-col justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-1 truncate h-14 flex items-center" title={product.nome}>{product.nome}</h3>
+                    <h3 
+                      className="text-lg font-semibold text-gray-800 mb-1 truncate h-14 flex items-center cursor-pointer hover:text-red-600" 
+                      title={product.nome}
+                      onClick={() => handleProductClick(product)}
+                    >
+                      {product.nome}
+                    </h3>
                 </div>
                 <div className="flex justify-between items-center mt-auto pt-3">
                   <p className="text-xl font-bold text-red-600">
@@ -326,6 +396,87 @@ const MarketplacePage = () => {
           </div>
         )}
       </div>
+
+      {/* Modal de detalhes do produto */}
+      {showProductModal && selectedProduct && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+              <h3 className="text-xl font-semibold text-gray-900">Detalhes do Produto</h3>
+              <button 
+                onClick={() => {setShowProductModal(false); setSelectedProduct(null);}} 
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <img
+                    src={selectedProduct.imagemUrl || "https://via.placeholder.com/400x400.png?text=Sem+Imagem"}
+                    alt={selectedProduct.nome}
+                    className="w-full h-96 object-cover rounded-lg"
+                    onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x400.png?text=Erro+Img"; }}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{selectedProduct.nome}</h2>
+                    <span className="inline-block mt-2 px-3 py-1 bg-red-100 text-red-800 text-sm font-semibold rounded-md">
+                      {getCategoryLabel(selectedProduct.categoria)}
+                    </span>
+                  </div>
+                  
+                  <div className="border-t border-b py-4">
+                    <p className="text-3xl font-bold text-red-600">
+                      R$ {Number(selectedProduct.preco).toFixed(2)}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Descrição</h3>
+                    <p className="text-gray-700">{selectedProduct.descricao}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Disponibilidade</h3>
+                    <p className={`text-lg font-medium ${selectedProduct.quantidadeEstoque > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {selectedProduct.quantidadeEstoque > 0 
+                        ? `Em estoque (${selectedProduct.quantidadeEstoque} unidades disponíveis)`
+                        : 'Produto indisponível'
+                      }
+                    </p>
+                  </div>
+                  
+                  <div className="pt-4">
+                    <button
+                      onClick={() => {
+                        addToCart(selectedProduct);
+                        setShowProductModal(false);
+                        setSelectedProduct(null);
+                      }}
+                      disabled={selectedProduct.quantidadeEstoque === 0}
+                      className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white transition-colors ${
+                        selectedProduct.quantidadeEstoque > 0 
+                          ? 'bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500' 
+                          : 'bg-gray-300 cursor-not-allowed'
+                      }`}
+                    >
+                      <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      {selectedProduct.quantidadeEstoque > 0 ? 'Adicionar ao Carrinho' : 'Produto Indisponível'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal do carrinho */}
       {showCart && (
@@ -486,7 +637,7 @@ const MarketplacePage = () => {
         }
         .btn-primary:hover { background-color: #B91C1C; /* red-700 */ }
         .btn-primary:focus { outline: 2px solid transparent; outline-offset: 2px; box-shadow: 0 0 0 0.125em #FEE2E2, 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary:disabled { opacity: 0.5; cursor-not-allowed; }
         .btn-secondary {
           padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; color: #374151; /* gray-700 */
           background-color: white; border: 1px solid #D1D5DB; /* gray-300 */

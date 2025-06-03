@@ -13,10 +13,14 @@ const ComprasPage = () => {
     if (userInfo) {
       setCurrentUser(JSON.parse(userInfo));
     }
-    
-    // Carregar pedidos do localStorage ou criar pedidos de exemplo
-    loadOrders();
   }, []);
+
+  useEffect(() => {
+    // Só carregar pedidos depois que tiver o usuário
+    if (currentUser !== null) {
+      loadOrders();
+    }
+  }, [currentUser]);
   
   useEffect(() => {
     // Filtrar pedidos com base no filtro de status
@@ -32,18 +36,21 @@ const ComprasPage = () => {
     // Tentar carregar pedidos do localStorage
     let savedOrders = JSON.parse(localStorage.getItem('autofacil_orders') || '[]');
     
+    // Obter o ID do usuário atual
+    const userId = currentUser?.id || 'default_user';
+    
     // Se não houver pedidos, criar pedidos de exemplo
-    if (savedOrders.length === 0 || !savedOrders.some(order => order.compradorId === currentUser?.id)) {
+    if (savedOrders.length === 0 || !savedOrders.some(order => order.compradorId === userId)) {
       const exampleOrders = [
         {
           id: '123456',
-          compradorId: currentUser?.id || 'default_user',
+          compradorId: userId,
           compradorNome: currentUser?.nomeEmpresa || 'Mecânica Padrão',
           vendedorId: 'vendor_1',
           vendedorNome: 'Auto Peças Silva',
           data: '2025-05-04T14:30:00',
           valorTotal: 359.90,
-          status: 'transito',
+          status: 'entregue',
           formaPagamento: 'cartao',
           itens: [
             { produtoId: '1', nome: 'Filtro de Óleo Premium', quantidade: 5, precoUnitario: 25.90 },
@@ -57,11 +64,11 @@ const ComprasPage = () => {
           },
           rastreamento: 'BR123456789SC',
           entregaEstimada: '2025-05-07',
-          entregaRealizada: null
+          entregaRealizada: '2025-05-23'
         },
         {
           id: '123455',
-          compradorId: currentUser?.id || 'default_user',
+          compradorId: userId,
           compradorNome: currentUser?.nomeEmpresa || 'Mecânica Padrão',
           vendedorId: 'vendor_2',
           vendedorNome: 'Distribuidora de Peças Automotivas',
@@ -85,7 +92,7 @@ const ComprasPage = () => {
         },
         {
           id: '123454',
-          compradorId: currentUser?.id || 'default_user',
+          compradorId: userId,
           compradorNome: currentUser?.nomeEmpresa || 'Mecânica Padrão',
           vendedorId: 'vendor_3',
           vendedorNome: 'Auto Peças Total',
@@ -109,7 +116,7 @@ const ComprasPage = () => {
         },
         {
           id: '123453',
-          compradorId: currentUser?.id || 'default_user',
+          compradorId: userId,
           compradorNome: currentUser?.nomeEmpresa || 'Mecânica Padrão',
           vendedorId: 'vendor_4',
           vendedorNome: 'Peças & Acessórios',
@@ -133,7 +140,7 @@ const ComprasPage = () => {
         },
         {
           id: '123452',
-          compradorId: currentUser?.id || 'default_user',
+          compradorId: userId,
           compradorNome: currentUser?.nomeEmpresa || 'Mecânica Padrão',
           vendedorId: 'vendor_1',
           vendedorNome: 'Auto Peças Silva',
@@ -166,14 +173,13 @@ const ComprasPage = () => {
     
     // Filtrar apenas os pedidos do usuário atual
     const myOrders = savedOrders.filter(order => 
-      order.compradorId === currentUser?.id || order.compradorId === 'default_user'
+      order.compradorId === userId
     );
     
     // Ordenar por data (mais recente primeiro)
     myOrders.sort((a, b) => new Date(b.data) - new Date(a.data));
     
     setOrders(myOrders);
-    setFilteredOrders(myOrders);
   };
   
   const getStatusLabel = (status) => {
@@ -190,14 +196,14 @@ const ComprasPage = () => {
   
   const getStatusColor = (status) => {
     const statusColors = {
-      'pendente': 'yellow',
-      'separacao': 'blue',
-      'transito': 'purple',
-      'entregue': 'green',
-      'cancelado': 'red'
+      'pendente': 'bg-yellow-100 text-yellow-800',
+      'separacao': 'bg-blue-100 text-blue-800',
+      'transito': 'bg-purple-100 text-purple-800',
+      'entregue': 'bg-green-100 text-green-800',
+      'cancelado': 'bg-red-100 text-red-800'
     };
     
-    return statusColors[status] || 'gray';
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
   };
   
   const formatDate = (dateString) => {
@@ -331,7 +337,7 @@ const ComprasPage = () => {
                     R$ {order.valorTotal.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-${getStatusColor(order.status)}-100 text-${getStatusColor(order.status)}-800`}>
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
                       {getStatusLabel(order.status)}
                     </span>
                   </td>
@@ -401,7 +407,7 @@ const ComprasPage = () => {
                     <div>
                       <span className="text-sm text-gray-500">Status:</span>
                       <p>
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-${getStatusColor(showOrderDetails.status)}-100 text-${getStatusColor(showOrderDetails.status)}-800`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(showOrderDetails.status)}`}>
                           {getStatusLabel(showOrderDetails.status)}
                         </span>
                       </p>
@@ -498,19 +504,19 @@ const ComprasPage = () => {
                     </div>
                     <div className="relative flex justify-between">
                       <div className="flex flex-col items-center">
-                        <div className={`h-5 w-5 rounded-full ${showOrderDetails.status !== 'pendente' ? 'bg-green-500' : 'bg-gray-200'} border-white`}></div>
+                        <div className={`h-5 w-5 rounded-full border-white ${showOrderDetails.status !== 'pendente' ? 'bg-green-500' : 'bg-gray-200'}`}></div>
                         <div className="text-xs font-medium mt-2">Pedido Recebido</div>
                       </div>
                       <div className="flex flex-col items-center">
-                        <div className={`h-5 w-5 rounded-full ${showOrderDetails.status !== 'pendente' ? 'bg-green-500' : 'bg-gray-200'} border-white`}></div>
+                        <div className={`h-5 w-5 rounded-full border-white ${showOrderDetails.status !== 'pendente' ? 'bg-green-500' : 'bg-gray-200'}`}></div>
                         <div className="text-xs font-medium mt-2">Em Separação</div>
                       </div>
                       <div className="flex flex-col items-center">
-                        <div className={`h-5 w-5 rounded-full ${showOrderDetails.status === 'transito' || showOrderDetails.status === 'entregue' ? 'bg-green-500' : 'bg-gray-200'} border-white`}></div>
+                        <div className={`h-5 w-5 rounded-full border-white ${showOrderDetails.status === 'transito' || showOrderDetails.status === 'entregue' ? 'bg-green-500' : 'bg-gray-200'}`}></div>
                         <div className="text-xs font-medium mt-2">Em Trânsito</div>
                       </div>
                       <div className="flex flex-col items-center">
-                        <div className={`h-5 w-5 rounded-full ${showOrderDetails.status === 'entregue' ? 'bg-green-500' : 'bg-gray-200'} border-white`}></div>
+                        <div className={`h-5 w-5 rounded-full border-white ${showOrderDetails.status === 'entregue' ? 'bg-green-500' : 'bg-gray-200'}`}></div>
                         <div className="text-xs font-medium mt-2">Entregue</div>
                       </div>
                     </div>
