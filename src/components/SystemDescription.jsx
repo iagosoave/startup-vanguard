@@ -4,7 +4,7 @@ const SystemDescription = () => {
   return (
     <section className="w-full bg-gray-50 text-gray-900 py-24 px-6">
       <div className="max-w-6xl mx-auto">
-        {/* Título com estilo minimalista */}
+
         <div className="text-center mb-20">
           <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase mb-4">
             CONEXÃO DIRETA
@@ -16,9 +16,8 @@ const SystemDescription = () => {
           </div>
         </div>
         
-        {/* Cards com layout minimalista */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-1 mt-16">
-          {/* Card 1 */}
+
           <div className="p-10 border border-gray-200 bg-white relative group hover:border-red-200 transition-all duration-500">
             <div className="absolute top-0 left-0 w-full h-full bg-red-50 opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
             <div className="relative z-10">
@@ -34,7 +33,6 @@ const SystemDescription = () => {
             </div>
           </div>
           
-          {/* Card 2 */}
           <div className="p-10 border border-gray-200 bg-white relative group hover:border-red-200 transition-all duration-500">
             <div className="absolute top-0 left-0 w-full h-full bg-red-50 opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
             <div className="relative z-10">
@@ -49,7 +47,6 @@ const SystemDescription = () => {
             </div>
           </div>
           
-          {/* Card 3 */}
           <div className="p-10 border border-gray-200 bg-white relative group hover:border-red-200 transition-all duration-500">
             <div className="absolute top-0 left-0 w-full h-full bg-red-50 opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
             <div className="relative z-10">
@@ -65,7 +62,6 @@ const SystemDescription = () => {
           </div>
         </div>
         
-        {/* Footer final */}
         <div className="text-center mt-20">
           <p className="text-sm tracking-wider text-gray-500 uppercase">
             Revolucionando o mercado de autopeças
