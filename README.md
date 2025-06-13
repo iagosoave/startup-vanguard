@@ -10,7 +10,10 @@
 
 O **autoFácil** é um marketplace B2B desenvolvido para conectar diretamente autopeças e oficinas mecânicas, eliminando intermediários e otimizando processos de compra e venda no setor automotivo.
 
-Projeto desenvolvido para a disciplina **Startup I** no **Centro Universitário Facens**.
+
+![Uploading Screenshot 2025-06-13 134238.png…]()
+
+
 
 ## 🎯 Problema Identificado
 
