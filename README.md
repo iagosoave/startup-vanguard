@@ -53,6 +53,11 @@ Uma plataforma completa que oferece:
 - **Persistência:** LocalStorage
 - **Ícones:** Lucide React
 
+## 🌐 Demo
+
+Acesse a aplicação: [https://autofacil-vanguard.vercel.app/](https://autofacil-vanguard.vercel.app/)
+  
+
 ## 📦 Instalação e Execução
 
 ```bash
@@ -68,6 +73,4 @@ npm install
 # Execute o projeto
 npm start
 
-## 🌐 Demo
 
-Acesse a aplicação: [https://autofacil-vanguard.vercel.app/](https://autofacil-vanguard.vercel.app/)
