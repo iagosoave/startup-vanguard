@@ -2,33 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 
-// Componentes para Autopeça
+// Autopeça
 import AutopecaDashboard from './autopeca/Dashboard';
 import EstoquePage from './autopeca/Estoque';
 import PedidosPage from './autopeca/Pedidos';
 
-// Componentes para Mecânico
-import MecanicoDashboard from './mecanico/Dashboard';
-import MarketplacePage from './mecanico/Marketplace';
+// Mecânico
 import ComprasPage from './mecanico/Compras';
-
-// Componente comum para ambos
-import ChatPage from './comum/Chat';
+import ChatbotPedidos from './mecanico/AssistenteAIPedidos'; 
+// Chat removido para Autopeça
+// import ChatPage from './comum/Chat'; 
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   useEffect(() => {
-    // Verificar se o usuário está logado
     const userInfo = sessionStorage.getItem('autofacil_currentUser');
     if (userInfo) {
       const user = JSON.parse(userInfo);
       setCurrentUser(user);
       setIsLoading(false);
     } else {
-      // Redirecionar para login se não estiver logado
       navigate('/login');
     }
   }, [navigate]);
@@ -41,24 +37,20 @@ const Dashboard = () => {
     <DashboardLayout>
       <Routes>
         {currentUser?.tipoUsuario === 'autopeca' ? (
-          // Rotas para Autopeça
+          // Rotas para Autopeça (SEM CHAT)
           <>
             <Route path="/" element={<AutopecaDashboard />} />
             <Route path="/estoque" element={<EstoquePage />} />
             <Route path="/pedidos" element={<PedidosPage />} />
-            <Route path="/chat" element={<ChatPage userType="autopeca" />} />
-            {/* Rota padrão para autopeças - redireciona para a raiz do dashboard (não para "/dashboard") */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* <Route path="/chat" element={<ChatPage userType="autopeca" />} /> REMOVIDO */}
+            <Route path="*" element={<Navigate to="/" replace />} /> {/* Redireciona para o dashboard principal */}
           </>
         ) : (
-          // Rotas para Mecânico
+          // Rotas para Mecânico (com Chatbot)
           <>
-            <Route path="/" element={<MecanicoDashboard />} />
-            <Route path="/marketplace" element={<MarketplacePage />} />
+            <Route path="/" element={<ChatbotPedidos />} />
             <Route path="/compras" element={<ComprasPage />} />
-            <Route path="/chat" element={<ChatPage userType="mecanico" />} />
-            {/* Rota padrão para mecânicos - redireciona para a raiz do dashboard (não para "/dashboard") */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} /> {/* Redireciona para o chatbot */}
           </>
         )}
       </Routes>

@@ -30,11 +30,6 @@ const TeamSection = () => {
       image: Hugo
     },
     {
-      name: "Carlos Augusto",
-      roles: ["Analista de BI", "Analista de Requisitos", "Analista de Suporte"],
-      image: Carlos
-    },
-    {
       name: "Luiz Henrique",
       roles: ["Desenvolvedor Back-end", "Especialista em Deploy"],
       image: Luiz

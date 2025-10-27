@@ -1,496 +1,281 @@
-import React, { useState, useEffect, useRef } from 'react'; // Added useRef
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit, Trash2, Search, Loader2, AlertCircle, X } from 'lucide-react';
+
+// ===================================================
+// LÓGICA DE API DO BACKEND (COMENTADO)
+// ===================================================
+// const fetchEstoque = async () => { /* ... */ };
+// const adicionarProdutoAPI = async (produto) => { /* ... */ };
+// const editarProdutoAPI = async (id, produtoAtualizado) => { /* ... */ };
+// const deletarProdutoAPI = async (id) => { /* ... */ };
+// ===================================================
 
 const EstoquePage = () => {
-  const [currentUser, setCurrentUser] = useState(null);
   const [products, setProducts] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true); 
+  const [error, setError] = useState(null); 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null); 
+  const [formValues, setFormValues] = useState({ nome: '', preco: '', quantidade: '', categoria: '' });
+  const [formErrors, setFormErrors] = useState({}); 
+  const [isSubmitting, setIsSubmitting] = useState(false); 
 
-  // Ref for the file input
-  const imageFileInputRef = useRef(null);
-
-  // Estado para novo produto (ou produto sendo editado)
-  const [productData, setProductData] = useState({
-    nome: '',
-    descricao: '',
-    preco: '',
-    categoria: 'motor',
-    quantidadeEstoque: '',
-    imagemUrl: '', // Will store the URL string from input
-    imagemPreview: null // For the <img src> in the form
-  });
-
+  // Busca inicial dos dados
   useEffect(() => {
-    const userInfo = sessionStorage.getItem('autofacil_currentUser');
-    if (userInfo) {
-      setCurrentUser(JSON.parse(userInfo));
-    }
-    loadProducts();
+    const carregarEstoque = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // const estoqueData = await fetchEstoque(); // CHAMADA API REAL
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simula delay API
+        const estoqueData = []; // Começa vazio
+        setProducts(estoqueData);
+        setFilteredProducts(estoqueData);
+      } catch (err) {
+        setError(err.message || 'Falha ao carregar estoque.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    carregarEstoque();
   }, []);
 
+  // Filtra produtos
   useEffect(() => {
-    if (searchTerm) {
-      const filtered = products.filter(product =>
-        product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.categoria.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts(products);
-    }
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const result = products.filter(product =>
+      product.nome.toLowerCase().includes(lowerSearchTerm) ||
+      product.categoria?.toLowerCase().includes(lowerSearchTerm) ||
+      product.id?.toString().includes(lowerSearchTerm)
+    );
+    setFilteredProducts(result);
   }, [searchTerm, products]);
 
-  const loadProducts = () => {
-    let savedProducts = JSON.parse(localStorage.getItem('autofacil_products') || '[]');
-    if (savedProducts.length < 5) {
-      const exampleProducts = [
-        {
-          id: '1',
-          vendedorId: currentUser?.id || 'example_user',
-          nome: 'Filtro de Óleo Premium',
-          descricao: 'Filtro de óleo de alta qualidade compatível com diversos modelos de veículos.',
-          preco: 25.90,
-          categoria: 'filtros',
-          quantidadeEstoque: 150,
-          imagemUrl: 'https://m.media-amazon.com/images/I/61zZpX0P+kL._AC_UF1000,1000_QL80_.jpg'
-        },
-        {
-          id: '2',
-          vendedorId: currentUser?.id || 'example_user',
-          nome: 'Kit de Pastilhas de Freio',
-          descricao: 'Kit completo de pastilhas de freio para veículos de passeio. Alta durabilidade.',
-          preco: 89.90,
-          categoria: 'freios',
-          quantidadeEstoque: 75,
-          imagemUrl: 'https://d2q38n0ohsv27h.cloudfront.net/Custom/Content/Products/20/15/2015606_kit-pastilha-e-disco-de-freio-dianteiro-ventilado-acdelco-cruze-1-4-turbo-2016-a-2023_z2_638295873640452568.webp'
-        },
-        {
-          id: '3',
-          vendedorId: currentUser?.id || 'example_user',
-          nome: 'Óleo de Motor Sintético 5W30',
-          descricao: 'Óleo sintético de alta performance. Embalagem com 1 litro.',
-          preco: 45.00,
-          categoria: 'oleos',
-          quantidadeEstoque: 200,
-          imagemUrl: 'https://cdn.awsli.com.br/600x700/2648/2648682/produto/239295642d10d1c5f05.jpg' // Placeholder example
-        },
-        {
-          id: '4',
-          vendedorId: currentUser?.id || 'example_user',
-          nome: 'Velas de Ignição - Conjunto com 4',
-          descricao: 'Conjunto com 4 velas de ignição de platina, compatível com motores flex.',
-          preco: 120.50,
-          categoria: 'eletrica',
-          quantidadeEstoque: 60,
-          imagemUrl: 'https://m.media-amazon.com/images/I/71ZiBaDF4yS._AC_UF1000,1000_QL80_.jpg' // Placeholder example
-        },
-        {
-          id: '5',
-          vendedorId: currentUser?.id || 'example_user',
-          nome: 'Amortecedor Dianteiro',
-          descricao: 'Amortecedor dianteiro para veículos compactos. Garantia de 1 ano.',
-          preco: 249.90,
-          categoria: 'suspensao',
-          quantidadeEstoque: 30,
-          imagemUrl: 'https://images.cws.digital/produtos/gg/54/08/amortecedor-dianteiro-turbogas-9390854-1660600283778.jpg' // Placeholder example
-        }
-      ];
-      savedProducts = [...savedProducts, ...exampleProducts.filter(ex => !savedProducts.find(sp => sp.id === ex.id))]; // Avoid duplicates
-      const uniqueProducts = [];
-      const productIds = new Set();
-      savedProducts.forEach(product => {
-        if (!productIds.has(product.id)) {
-          productIds.add(product.id);
-          uniqueProducts.push(product);
-        }
-      });
-      localStorage.setItem('autofacil_products', JSON.stringify(uniqueProducts));
-      setProducts(uniqueProducts);
-    } else {
-      setProducts(savedProducts);
-    }
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'imagemUrl') {
-      setProductData(prevData => ({
-        ...prevData,
-        imagemUrl: value,
-        imagemPreview: value // Update preview directly from URL input
-      }));
-      // Clear file input if URL is typed
-      if (imageFileInputRef.current) {
-        imageFileInputRef.current.value = '';
-      }
-    } else {
-      setProductData(prevData => ({
-        ...prevData,
-        [name]: value
-      }));
+    if ((name === 'preco' || name === 'quantidade') && value && !/^\d*[,.]?\d*$/.test(value)) {
+        return; 
+    }
+    setFormValues(prev => ({ ...prev, [name]: value }));
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: null }));
     }
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const objectUrl = URL.createObjectURL(file);
-      setProductData(prevData => ({
-        ...prevData,
-        imagemUrl: '', // Clear the text input for URL if a file is chosen
-        imagemPreview: objectUrl
-      }));
-    }
-    // No need to reset e.target.value here if using ref to clear it from handleInputChange
-    // or if we decide not to auto-clear it. For now, let's keep it simple:
-    // if user selects a file, it clears the URL input for preview purposes.
+  const validateForm = () => {
+    const errors = {};
+    if (!formValues.nome.trim()) errors.nome = 'Nome é obrigatório';
+    if (!formValues.preco) errors.preco = 'Preço é obrigatório';
+    else if (isNaN(parseFloat(formValues.preco.replace(',', '.'))) || parseFloat(formValues.preco.replace(',', '.')) <= 0) errors.preco = 'Preço inválido';
+    if (!formValues.quantidade) errors.quantidade = 'Quantidade é obrigatória';
+    else if (!/^\d+$/.test(formValues.quantidade) || parseInt(formValues.quantidade, 10) < 0) errors.quantidade = 'Quantidade inválida';
+    return errors;
   };
 
-  const handleEditProduct = (product) => {
-    setEditingProduct(product);
-    setProductData({
+  // Funções para abrir/fechar modal (sem alterações na lógica)
+  const openModalForAdd = () => {
+    setIsEditing(false);
+    setCurrentProduct(null);
+    setFormValues({ nome: '', preco: '', quantidade: '', categoria: '' });
+    setFormErrors({});
+    setError(null); // Limpa erros específicos do modal
+    setIsModalOpen(true);
+  };
+
+  const openModalForEdit = (product) => {
+    setIsEditing(true);
+    setCurrentProduct(product);
+    setFormValues({
       nome: product.nome,
-      descricao: product.descricao,
-      preco: product.preco.toString(),
-      categoria: product.categoria,
-      quantidadeEstoque: product.quantidadeEstoque.toString(),
-      imagemUrl: product.imagemUrl || '', // Use product's URL for the input
-      imagemPreview: product.imagemUrl || null // And for the preview
+      preco: product.preco.toString().replace('.', ','),
+      quantidade: product.quantidade.toString(),
+      categoria: product.categoria || '',
     });
-    setShowModal(true);
+    setFormErrors({});
+    setError(null); // Limpa erros específicos do modal
+    setIsModalOpen(true);
   };
 
-  const handleAddNewProduct = () => {
-    setEditingProduct(null);
-    setProductData({
-      nome: '',
-      descricao: '',
-      preco: '',
-      categoria: 'motor',
-      quantidadeEstoque: '',
-      imagemUrl: '',
-      imagemPreview: null
-    });
-    if (imageFileInputRef.current) {
-        imageFileInputRef.current.value = ''; // Clear file input when adding new
-    }
-    setShowModal(true);
+  const closeModal = () => {
+    if (isSubmitting) return; 
+    setIsModalOpen(false);
+    // Não precisa resetar aqui, openModal já faz isso.
   };
 
-  const handleSaveProduct = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-
-    if (!productData.nome || !productData.preco || !productData.quantidadeEstoque) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setFormErrors(validationErrors);
       return;
     }
-
-    // Determine the final image URL to save
-    // Prioritize the URL from the text input.
-    // If it's empty (e.g., user uploaded a file, which clears this input, or just didn't provide one),
-    // then fall back to the existing product's image URL (if editing) or a placeholder.
-    let finalImageUrl = productData.imagemUrl.trim();
-    if (!finalImageUrl) {
-        if (editingProduct && editingProduct.imagemUrl) {
-            finalImageUrl = editingProduct.imagemUrl;
-        } else {
-            finalImageUrl = 'https://via.placeholder.com/100x100.png?text=Sem+Imagem'; // Default placeholder
-        }
-    }
-    // If the preview is a blob, but the URL input is also filled, the URL input wins.
-    // If URL input is empty and preview is a blob, it means file was uploaded and we fallback.
-
-    const productPayload = {
-      nome: productData.nome,
-      descricao: productData.descricao,
-      preco: parseFloat(productData.preco),
-      categoria: productData.categoria,
-      quantidadeEstoque: parseInt(productData.quantidadeEstoque),
-      imagemUrl: finalImageUrl
+    setIsSubmitting(true);
+    setError(null); 
+    const produtoParaSalvar = {
+      nome: formValues.nome.trim(),
+      preco: parseFloat(formValues.preco.replace(',', '.')),
+      quantidade: parseInt(formValues.quantidade, 10),
+      categoria: formValues.categoria.trim() || null,
     };
-
-    let updatedProducts;
-
-    if (editingProduct) {
-      updatedProducts = products.map(p =>
-        p.id === editingProduct.id
-          ? { ...p, ...productPayload }
-          : p
-      );
-    } else {
-      const newProduct = {
-        id: Date.now().toString(),
-        vendedorId: currentUser?.id || 'default_user',
-        ...productPayload,
-        dataCadastro: new Date().toISOString()
-      };
-      updatedProducts = [...products, newProduct];
-    }
-
-    setProducts(updatedProducts);
-    localStorage.setItem('autofacil_products', JSON.stringify(updatedProducts));
-
-    setShowModal(false);
-    setEditingProduct(null);
-    setProductData({ // Reset form
-      nome: '',
-      descricao: '',
-      preco: '',
-      categoria: 'motor',
-      quantidadeEstoque: '',
-      imagemUrl: '',
-      imagemPreview: null
-    });
-    if (imageFileInputRef.current) {
-        imageFileInputRef.current.value = ''; // Clear file input after save
+    try {
+      if (isEditing && currentProduct) {
+        // const produtoAtualizado = await editarProdutoAPI(currentProduct.id, produtoParaSalvar);
+        await new Promise(resolve => setTimeout(resolve, 1000)); 
+        const produtoAtualizado = { ...produtoParaSalvar, id: currentProduct.id }; 
+        setProducts(prev => prev.map(p => p.id === currentProduct.id ? produtoAtualizado : p));
+      } else {
+        // const novoProduto = await adicionarProdutoAPI(produtoParaSalvar);
+        await new Promise(resolve => setTimeout(resolve, 1000)); 
+        const novoProduto = { ...produtoParaSalvar, id: Date.now() }; 
+        setProducts(prev => [novoProduto, ...prev]); 
+      }
+      closeModal();
+    } catch (err) {
+      setError(err.message || `Erro ao ${isEditing ? 'editar' : 'adicionar'} produto.`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleDeleteProduct = (productId) => {
-    const updatedProducts = products.filter(product => product.id !== productId);
-    setProducts(updatedProducts);
-    localStorage.setItem('autofacil_products', JSON.stringify(updatedProducts));
-    setShowDeleteConfirm(null);
-  };
-
-  const getCategoryLabel = (category) => {
-    const categories = {
-      'motor': 'Motor', 'freios': 'Freios', 'suspensao': 'Suspensão',
-      'eletrica': 'Elétrica', 'filtros': 'Filtros', 'oleos': 'Óleos e Fluídos',
-      'carroceria': 'Carroceria', 'acessorios': 'Acessórios'
-    };
-    return categories[category] || category;
+  const handleDelete = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir este produto?')) return;
+    setError(null);
+    try {
+      // await deletarProdutoAPI(id); 
+      await new Promise(resolve => setTimeout(resolve, 500)); 
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      setError(err.message || 'Erro ao deletar produto.');
+      alert(`Erro ao deletar: ${err.message || 'Erro desconhecido'}`);
+    } 
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gestão de Estoque</h1>
+    <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800">Gerenciamento de Estoque</h2>
+
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <div className="relative w-full sm:w-auto flex-grow sm:max-w-xs">
+          <input
+            type="text"
+            placeholder="Buscar por nome, categoria ou ID..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        </div>
         <button
-          onClick={handleAddNewProduct}
-          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center"
+          onClick={openModalForAdd}
+          className="w-full sm:w-auto flex items-center justify-center bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm"
         >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
+          <Plus className="h-5 w-5 mr-2" />
           Adicionar Produto
         </button>
       </div>
 
-      <div className="mb-6">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm"
-            placeholder="Buscar produtos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {isLoading && (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+          <span className="ml-3 text-gray-600">Carregando estoque...</span>
         </div>
-      </div>
-
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
-              <li key={product.id}>
-                <div className="px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-12 w-12 rounded overflow-hidden bg-gray-100">
-                        <img 
-                            src={product.imagemUrl || 'https://via.placeholder.com/100x100.png?text=Sem+Imagem'} 
-                            alt={product.nome} 
-                            className="h-12 w-12 object-cover" 
-                            onError={(e) => { e.target.onerror = null; e.target.src='https://via.placeholder.com/100x100.png?text=Erro'; }}
-                        />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{product.nome}</div>
-                        <div className="text-sm text-gray-500 max-w-md truncate" title={product.descricao}>{product.descricao}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 sm:space-x-6">
-                      <div className="text-sm text-gray-900">
-                        <span className="font-medium">R$ {Number(product.preco).toFixed(2)}</span>
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        Estoque: <span className={`font-medium ${product.quantidadeEstoque < 30 ? 'text-red-600' : 'text-green-600'}`}>
-                          {product.quantidadeEstoque}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {getCategoryLabel(product.categoria)}
-                        </span>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEditProduct(product)}
-                          className="text-gray-500 hover:text-gray-700"
-                          title="Editar produto"
-                        >
-                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => setShowDeleteConfirm(product)}
-                          className="text-red-500 hover:text-red-700"
-                          title="Excluir produto"
-                        >
-                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            ))
-          ) : (
-            <li className="px-4 py-6 text-center text-gray-500">
-              Nenhum produto encontrado. Adicione um novo produto ou ajuste sua pesquisa.
-            </li>
-          )}
-        </ul>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <div className="sm:flex sm:items-start">
-                <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    {editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}
-                  </h3>
-                  <form onSubmit={handleSaveProduct}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="col-span-2">
-                        <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">Nome do Produto *</label>
-                        <input type="text" name="nome" id="nome" required value={productData.nome} onChange={handleInputChange} className="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border" />
-                      </div>
-                      <div className="col-span-2">
-                        <label htmlFor="descricao" className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-                        <textarea name="descricao" id="descricao" rows="3" value={productData.descricao} onChange={handleInputChange} className="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"></textarea>
-                      </div>
-                      <div>
-                        <label htmlFor="preco" className="block text-sm font-medium text-gray-700 mb-1">Preço (R$) *</label>
-                        <input type="number" name="preco" id="preco" required min="0" step="0.01" value={productData.preco} onChange={handleInputChange} className="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border" />
-                      </div>
-                      <div>
-                        <label htmlFor="quantidadeEstoque" className="block text-sm font-medium text-gray-700 mb-1">Quantidade em Estoque *</label>
-                        <input type="number" name="quantidadeEstoque" id="quantidadeEstoque" required min="0" value={productData.quantidadeEstoque} onChange={handleInputChange} className="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border" />
-                      </div>
-                      <div>
-                        <label htmlFor="categoria" className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-                        <select name="categoria" id="categoria" value={productData.categoria} onChange={handleInputChange} className="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
-                          <option value="motor">Motor</option> <option value="freios">Freios</option> <option value="suspensao">Suspensão</option>
-                          <option value="eletrica">Elétrica</option> <option value="filtros">Filtros</option> <option value="oleos">Óleos e Fluídos</option>
-                          <option value="carroceria">Carroceria</option> <option value="acessorios">Acessórios</option>
-                        </select>
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <label htmlFor="imagemUrlInput" className="block text-sm font-medium text-gray-700 mb-1">
-                          URL da Imagem do Produto
-                        </label>
-                        <input
-                          type="url"
-                          name="imagemUrl"
-                          id="imagemUrlInput"
-                          placeholder="https://exemplo.com/imagem.jpg"
-                          value={productData.imagemUrl}
-                          onChange={handleInputChange}
-                          className="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border mb-2"
-                        />
-                      </div>
-
-                      <div className="col-span-2">
-                        <label htmlFor="imagemFile" className="block text-sm font-medium text-gray-700 mb-1">
-                          Ou Carregar Imagem do Produto
-                        </label>
-                        <div className="flex items-center space-x-4">
-                          <div className="w-20 h-20 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
-                            {productData.imagemPreview ? (
-                              <img src={productData.imagemPreview} alt="Preview" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src='https://via.placeholder.com/100x100.png?text=Invalida'; }} />
-                            ) : (
-                              <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <input
-                              type="file"
-                              name="imagemFile" // Different name to avoid conflict if needed
-                              id="imagemFile"
-                              ref={imageFileInputRef} // Assign ref
-                              accept="image/*"
-                              onChange={handleImageUpload}
-                              className="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">JPG, PNG, GIF. (Pré-visualização apenas)</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-6 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                      <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm">
-                        {editingProduct ? 'Salvar Alterações' : 'Adicionar Produto'}
-                      </button>
-                      <button type="button" onClick={() => { setShowModal(false); setEditingProduct(null); if (imageFileInputRef.current) imageFileInputRef.current.value = ''; }} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:col-start-1 sm:text-sm">
-                        Cancelar
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </div>
+      )}
+      {!isLoading && error && !isModalOpen && ( 
+        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg flex items-center">
+          <AlertCircle className="h-5 w-5 mr-3" />
+          {error}
         </div>
       )}
 
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
-            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <div className="sm:flex sm:items-start">
-                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                  <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.262 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
+      {!isLoading && !error && (
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border border-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantidade</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map(product => (
+                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.nome}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R$ {product.preco?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{product.quantidade}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.categoria || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-3">
+                      <button onClick={() => openModalForEdit(product)} className="text-blue-600 hover:text-blue-800 transition-colors" title="Editar"><Edit className="h-5 w-5 inline" /></button>
+                      <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-800 transition-colors" title="Excluir"><Trash2 className="h-5 w-5 inline" /></button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="px-6 py-10 text-center text-gray-500">
+                    {searchTerm ? 'Nenhum produto encontrado.' : 'Nenhum produto cadastrado.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Modal (JSX inalterado, apenas remoção da animação CSS) */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-out opacity-100"> {/* Animação removida daqui */}
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col transform transition-all duration-300 ease-out scale-100 opacity-100"> {/* Animação removida daqui */}
+             {/* Header */}
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">{isEditing ? 'Editar Produto' : 'Adicionar Novo Produto'}</h3>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 disabled:opacity-50" disabled={isSubmitting}><X size={20} /></button>
+            </div>
+            {/* Form */}
+            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+              {error && ( <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex items-center text-sm"><AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />{error}</div> )}
+              <div>
+                <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">Nome <span className="text-red-500">*</span></label>
+                <input type="text" id="nome" name="nome" value={formValues.nome} onChange={handleInputChange} required className={`w-full px-3 py-2 border ${formErrors.nome ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500`} />
+                {formErrors.nome && <p className="text-red-500 text-xs mt-1">{formErrors.nome}</p>}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="preco" className="block text-sm font-medium text-gray-700 mb-1">Preço (R$) <span className="text-red-500">*</span></label>
+                  <input type="text" id="preco" name="preco" value={formValues.preco} onChange={handleInputChange} required inputMode="decimal" placeholder="Ex: 25,99" className={`w-full px-3 py-2 border ${formErrors.preco ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500`} />
+                  {formErrors.preco && <p className="text-red-500 text-xs mt-1">{formErrors.preco}</p>}
                 </div>
-                <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">Confirmar Exclusão</h3>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500">
-                      Tem certeza que deseja excluir o produto "{showDeleteConfirm.nome}"? Esta ação não pode ser desfeita.
-                    </p>
-                  </div>
+                <div>
+                  <label htmlFor="quantidade" className="block text-sm font-medium text-gray-700 mb-1">Quantidade <span className="text-red-500">*</span></label>
+                  <input type="number" id="quantidade" name="quantidade" value={formValues.quantidade} onChange={handleInputChange} required min="0" step="1" inputMode="numeric" className={`w-full px-3 py-2 border ${formErrors.quantidade ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500`} />
+                  {formErrors.quantidade && <p className="text-red-500 text-xs mt-1">{formErrors.quantidade}</p>}
                 </div>
               </div>
-            </div>
-            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-              <button type="button" onClick={() => handleDeleteProduct(showDeleteConfirm.id)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                Excluir
-              </button>
-              <button type="button" onClick={() => setShowDeleteConfirm(null)} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                Cancelar
+              <div>
+                <label htmlFor="categoria" className="block text-sm font-medium text-gray-700 mb-1">Categoria (Opcional)</label>
+                <input type="text" id="categoria" name="categoria" value={formValues.categoria} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" />
+              </div>
+            </form>
+            {/* Footer */}
+            <div className="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3">
+              <button type="button" onClick={closeModal} disabled={isSubmitting} className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50">Cancelar</button>
+              <button type="submit" onClick={handleFormSubmit} disabled={isSubmitting} className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 flex items-center">
+                {isSubmitting && <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />}
+                {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Adicionar Produto')}
               </button>
             </div>
           </div>
+          {/* REMOVIDO o <style jsx> */}
         </div>
       )}
     </div>
