@@ -7,7 +7,6 @@ const Hero = () => {
   const [currentUser, setCurrentUser] = useState(null);
   
   useEffect(() => {
-    // Verificar se o usuário está logado ao carregar o componente
     const checkAuth = () => {
       const userInfo = sessionStorage.getItem('autofacil_currentUser');
       if (userInfo) {
@@ -17,7 +16,6 @@ const Hero = () => {
     
     checkAuth();
     
-    // Atualizar quando houver mudanças no sessionStorage
     window.addEventListener('storage', checkAuth);
     
     return () => {
@@ -26,13 +24,11 @@ const Hero = () => {
   }, []);
   
   const handleLogout = () => {
-    // Remover usuário da sessão
     sessionStorage.removeItem('autofacil_currentUser');
     setCurrentUser(null);
     navigate('/');
   };
 
-  // Variantes de animação
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -69,7 +65,6 @@ const Hero = () => {
 
   return (
     <section className="w-full min-h-screen bg-white text-black flex items-center justify-center relative overflow-hidden">
-      {/* Navbar */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -119,7 +114,6 @@ const Hero = () => {
         </div>
       </motion.div>
       
-      {/* Elementos decorativos minimalistas com animação */}
       <motion.div 
         variants={lineVariants}
         initial="hidden"
@@ -134,7 +128,6 @@ const Hero = () => {
         className="absolute bottom-0 right-0 w-1 bg-red-600"
       />
       
-      {/* Main content */}
       <motion.div 
         variants={containerVariants}
         initial="hidden"
@@ -142,7 +135,6 @@ const Hero = () => {
         className="max-w-4xl mx-auto px-4 sm:px-8 z-10 text-center"
       >
         <div className="flex flex-col items-center justify-center">
-          {/* Título principal */}
           <div className="mb-16">
             <motion.div variants={itemVariants} className="flex justify-center mb-8">
               <div className="w-16 h-1 bg-red-600"></div>
@@ -165,7 +157,6 @@ const Hero = () => {
             </motion.p>
           </div>
           
-          {/* CTA */}
           <motion.div variants={itemVariants} className="mb-16">
             {!currentUser ? (
               <Link to="/cadastro">
@@ -224,7 +215,6 @@ const Hero = () => {
         </div>
       </motion.div>
       
-      {/* Footer minimalista */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

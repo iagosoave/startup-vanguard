@@ -45,15 +45,12 @@ const DashboardLayout = ({ children }) => {
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2">
           {currentUser.tipoUsuario === 'autopeca' ? (
-            // Menu para Autopeças (SEM CHAT)
             <>
               <SidebarLink to="/dashboard" icon="chart-pie" text="Dashboard" isSidebarOpen={isSidebarOpen} location={location} />
               <SidebarLink to="/dashboard/estoque" icon="cube" text="Estoque" isSidebarOpen={isSidebarOpen} location={location} />
               <SidebarLink to="/dashboard/pedidos" icon="shopping-cart" text="Pedidos" isSidebarOpen={isSidebarOpen} location={location} />
-              {/* <SidebarLink to="/dashboard/chat" icon="chat" text="Mensagens" isSidebarOpen={isSidebarOpen} location={location} /> REMOVIDO */}
             </>
           ) : (
-            // Menu para Mecânicos (com Chatbot)
             <>
               <SidebarLink to="/dashboard" icon="bot" text="Fazer Pedido" isSidebarOpen={isSidebarOpen} location={location} />
               <SidebarLink to="/dashboard/compras" icon="receipt" text="Minhas Compras" isSidebarOpen={isSidebarOpen} location={location} />

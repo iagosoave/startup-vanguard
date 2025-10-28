@@ -4,20 +4,18 @@ import { Link, useNavigate } from 'react-router-dom';
 const RecuperarSenha = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  const [step, setStep] = useState(1); // 1: email, 2: nova senha
+  const [step, setStep] = useState(1); 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  // Função para verificar email
   const handleSubmitEmail = (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
 
     setTimeout(() => {
-      // Verificar se o email existe no sistema
       const users = JSON.parse(localStorage.getItem('autofacil_users') || '[]');
       const userExists = users.some(user => user.email === email);
 
@@ -39,13 +37,11 @@ const RecuperarSenha = () => {
     }, 1000);
   };
 
-  // Função para definir nova senha
   const handleResetPassword = (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
 
-    // Validar senhas
     if (newPassword.length < 6) {
       setMessage({ 
         type: 'error', 
@@ -65,7 +61,6 @@ const RecuperarSenha = () => {
     }
 
     setTimeout(() => {
-      // Atualizar a senha do usuário no localStorage
       const users = JSON.parse(localStorage.getItem('autofacil_users') || '[]');
       const updatedUsers = users.map(user => {
         if (user.email === email) {
@@ -82,7 +77,6 @@ const RecuperarSenha = () => {
       });
       setIsSubmitting(false);
       
-      // Redirecionar para o login após alguns segundos
       setTimeout(() => {
         navigate('/login');
       }, 2000);
@@ -102,11 +96,9 @@ const RecuperarSenha = () => {
         </div>
       </div>
       
-      {/* Minimalist red details */}
       <div className="absolute top-0 left-0 w-1 h-32 bg-red-600"></div>
       <div className="absolute bottom-0 right-0 w-1 h-32 bg-red-600"></div>
       
-      {/* Recuperação de Senha Form */}
       <div className="max-w-md w-full mx-auto px-4 sm:px-8 py-12 bg-white z-10 shadow-lg rounded-lg">
         <div className="mb-10 text-center">
           <div className="flex justify-center">
@@ -125,14 +117,12 @@ const RecuperarSenha = () => {
           )}
         </div>
         
-        {/* Mensagem de sucesso ou erro */}
         {message.text && (
           <div className={`mb-6 p-3 rounded ${message.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-800'}`}>
             {message.text}
           </div>
         )}
         
-        {/* Etapa 1: Email */}
         {step === 1 && (
           <form onSubmit={handleSubmitEmail} className="space-y-6">
             <div>
@@ -164,7 +154,6 @@ const RecuperarSenha = () => {
           </form>
         )}
         
-        {/* Etapa 2: Nova Senha */}
         {step === 2 && (
           <form onSubmit={handleResetPassword} className="space-y-6">
             <div>
@@ -222,7 +211,6 @@ const RecuperarSenha = () => {
         </div>
       </div>
       
-      {/* Minimalist footer */}
       <div className="absolute bottom-4 left-0 w-full text-center z-20">
         <div className="flex items-center justify-center">
           <div className="h-px w-12 sm:w-16 bg-gray-300"></div>

@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Loader2, AlertCircle, X } from 'lucide-react';
-
-// ===================================================
-// LÓGICA DE API DO BACKEND (COMENTADO)
-// ===================================================
-// const fetchEstoque = async () => { /* ... */ };
-// const adicionarProdutoAPI = async (produto) => { /* ... */ };
-// const editarProdutoAPI = async (id, produtoAtualizado) => { /* ... */ };
-// const deletarProdutoAPI = async (id) => { /* ... */ };
-// ===================================================
+import { produtoAPI, handleApiError } from '../../services/api';
 
 const EstoquePage = () => {
   const [products, setProducts] = useState([]);
@@ -23,27 +15,25 @@ const EstoquePage = () => {
   const [formErrors, setFormErrors] = useState({}); 
   const [isSubmitting, setIsSubmitting] = useState(false); 
 
-  // Busca inicial dos dados
   useEffect(() => {
-    const carregarEstoque = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // const estoqueData = await fetchEstoque(); // CHAMADA API REAL
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simula delay API
-        const estoqueData = []; // Começa vazio
-        setProducts(estoqueData);
-        setFilteredProducts(estoqueData);
-      } catch (err) {
-        setError(err.message || 'Falha ao carregar estoque.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
     carregarEstoque();
   }, []);
 
-  // Filtra produtos
+  const carregarEstoque = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const estoqueData = await produtoAPI.findAll();
+      setProducts(estoqueData);
+      setFilteredProducts(estoqueData);
+    } catch (err) {
+      const errorInfo = handleApiError(err);
+      setError(errorInfo.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const lowerSearchTerm = searchTerm.toLowerCase();
     const result = products.filter(product =>
@@ -79,13 +69,12 @@ const EstoquePage = () => {
     return errors;
   };
 
-  // Funções para abrir/fechar modal (sem alterações na lógica)
   const openModalForAdd = () => {
     setIsEditing(false);
     setCurrentProduct(null);
     setFormValues({ nome: '', preco: '', quantidade: '', categoria: '' });
     setFormErrors({});
-    setError(null); // Limpa erros específicos do modal
+    setError(null);
     setIsModalOpen(true);
   };
 
@@ -99,14 +88,13 @@ const EstoquePage = () => {
       categoria: product.categoria || '',
     });
     setFormErrors({});
-    setError(null); // Limpa erros específicos do modal
+    setError(null);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     if (isSubmitting) return; 
     setIsModalOpen(false);
-    // Não precisa resetar aqui, openModal já faz isso.
   };
 
   const handleFormSubmit = async (e) => {
@@ -118,27 +106,29 @@ const EstoquePage = () => {
     }
     setIsSubmitting(true);
     setError(null); 
+    
     const produtoParaSalvar = {
       nome: formValues.nome.trim(),
       preco: parseFloat(formValues.preco.replace(',', '.')),
       quantidade: parseInt(formValues.quantidade, 10),
       categoria: formValues.categoria.trim() || null,
     };
+    
     try {
       if (isEditing && currentProduct) {
-        // const produtoAtualizado = await editarProdutoAPI(currentProduct.id, produtoParaSalvar);
-        await new Promise(resolve => setTimeout(resolve, 1000)); 
-        const produtoAtualizado = { ...produtoParaSalvar, id: currentProduct.id }; 
+        const produtoAtualizado = await produtoAPI.update({
+          id: currentProduct.id,
+          ...produtoParaSalvar
+        });
         setProducts(prev => prev.map(p => p.id === currentProduct.id ? produtoAtualizado : p));
       } else {
-        // const novoProduto = await adicionarProdutoAPI(produtoParaSalvar);
-        await new Promise(resolve => setTimeout(resolve, 1000)); 
-        const novoProduto = { ...produtoParaSalvar, id: Date.now() }; 
+        const novoProduto = await produtoAPI.create(produtoParaSalvar, null, null);
         setProducts(prev => [novoProduto, ...prev]); 
       }
       closeModal();
     } catch (err) {
-      setError(err.message || `Erro ao ${isEditing ? 'editar' : 'adicionar'} produto.`);
+      const errorInfo = handleApiError(err);
+      setError(errorInfo.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -148,12 +138,12 @@ const EstoquePage = () => {
     if (!window.confirm('Tem certeza que deseja excluir este produto?')) return;
     setError(null);
     try {
-      // await deletarProdutoAPI(id); 
-      await new Promise(resolve => setTimeout(resolve, 500)); 
+      await produtoAPI.delete(id);
       setProducts(prev => prev.filter(p => p.id !== id));
     } catch (err) {
-      setError(err.message || 'Erro ao deletar produto.');
-      alert(`Erro ao deletar: ${err.message || 'Erro desconhecido'}`);
+      const errorInfo = handleApiError(err);
+      setError(errorInfo.message);
+      alert(`Erro ao deletar: ${errorInfo.message}`);
     } 
   };
 
@@ -232,16 +222,13 @@ const EstoquePage = () => {
         </div>
       )}
 
-      {/* Modal (JSX inalterado, apenas remoção da animação CSS) */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-out opacity-100"> {/* Animação removida daqui */}
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col transform transition-all duration-300 ease-out scale-100 opacity-100"> {/* Animação removida daqui */}
-             {/* Header */}
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-out opacity-100">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col transform transition-all duration-300 ease-out scale-100 opacity-100">
             <div className="px-6 py-4 border-b flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-800">{isEditing ? 'Editar Produto' : 'Adicionar Novo Produto'}</h3>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 disabled:opacity-50" disabled={isSubmitting}><X size={20} /></button>
             </div>
-            {/* Form */}
             <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
               {error && ( <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex items-center text-sm"><AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />{error}</div> )}
               <div>
@@ -266,7 +253,6 @@ const EstoquePage = () => {
                 <input type="text" id="categoria" name="categoria" value={formValues.categoria} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" />
               </div>
             </form>
-            {/* Footer */}
             <div className="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3">
               <button type="button" onClick={closeModal} disabled={isSubmitting} className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50">Cancelar</button>
               <button type="submit" onClick={handleFormSubmit} disabled={isSubmitting} className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 flex items-center">
@@ -275,7 +261,6 @@ const EstoquePage = () => {
               </button>
             </div>
           </div>
-          {/* REMOVIDO o <style jsx> */}
         </div>
       )}
     </div>

@@ -1,100 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
-
-// ===================================================
-// INÍCIO - LÓGICA DE API DO BACKEND (COMENTADO)
-// ===================================================
-// const fetchPedidos = async () => {
-//   try {
-//     const response = await fetch('URL_DA_SUA_API/pedidos/autopeca'); // Rota específica para autopeça
-//     if (!response.ok) {
-//       throw new Error('Erro ao buscar pedidos');
-//     }
-//     const data = await response.json();
-//     // Ordenar por data mais recente (exemplo, ajuste conforme sua API)
-//     return data.sort((a, b) => new Date(b.dataPedido) - new Date(a.dataPedido));
-//   } catch (error) {
-//     console.error("API Error (fetchPedidos):", error);
-//     throw error;
-//   }
-// };
-
-// const atualizarStatusPedidoAPI = async (pedidoId, novoStatus) => {
-//   try {
-//     const response = await fetch(`URL_DA_SUA_API/pedidos/${pedidoId}/status`, {
-//       method: 'PATCH', // ou PUT
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ status: novoStatus }),
-//     });
-//     if (!response.ok) {
-//       const errorData = await response.json();
-//       throw new Error(errorData.message || 'Erro ao atualizar status');
-//     }
-//     const data = await response.json();
-//     return data; // Retorna o pedido atualizado
-//   } catch (error) {
-//     console.error("API Error (atualizarStatusPedidoAPI):", error);
-//     throw error;
-//   }
-// };
-// ===================================================
-// FIM - LÓGICA DE API DO BACKEND
-// ===================================================
+import { pedidoAPI, handleApiError } from '../../services/api';
 
 const Pedidos = () => {
   const [pedidos, setPedidos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [updatingStatusId, setUpdatingStatusId] = useState(null); // ID do pedido sendo atualizado
+  const [updatingStatusId, setUpdatingStatusId] = useState(null);
 
-  // Opções de Status (poderia vir da API também)
   const statusOptions = ['Pendente', 'Em Processamento', 'Enviado', 'Entregue', 'Cancelado'];
 
-  // Função para buscar pedidos
   const carregarPedidos = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // const pedidosData = await fetchPedidos(); // CHAMADA API REAL
-      await new Promise(resolve => setTimeout(resolve, 1200)); // Simula delay
-      const pedidosData = []; // Simula resposta vazia ou com mocks
-      setPedidos(pedidosData);
+      const pedidosData = await pedidoAPI.getAll();
+      // Ordenar por data mais recente
+      const pedidosOrdenados = pedidosData.sort((a, b) => 
+        new Date(b.dataPedido || b.createdAt) - new Date(a.dataPedido || a.createdAt)
+      );
+      setPedidos(pedidosOrdenados);
     } catch (err) {
-      setError(err.message || 'Falha ao carregar pedidos. Tente recarregar.');
+      const errorInfo = handleApiError(err);
+      setError(errorInfo.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Busca inicial
   useEffect(() => {
     carregarPedidos();
   }, []);
 
   const handleStatusChange = async (pedidoId, novoStatus) => {
-    setUpdatingStatusId(pedidoId); // Mostra loading no select específico
+    setUpdatingStatusId(pedidoId);
     setError(null);
 
     try {
-      // const pedidoAtualizado = await atualizarStatusPedidoAPI(pedidoId, novoStatus); // CHAMADA API REAL
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simula delay
-      const pedidoAtualizado = { id: pedidoId, status: novoStatus }; // Simula resposta
+      // Atualizar status do pedido
+      // Se sua API não tiver endpoint específico para status, use o update
+      const pedidoAtualizado = await pedidoAPI.update(pedidoId, { status: novoStatus });
 
       setPedidos(prevPedidos =>
         prevPedidos.map(pedido =>
-          pedido.id === pedidoId ? { ...pedido, status: pedidoAtualizado.status } : pedido
+          pedido.id === pedidoId ? { ...pedido, status: novoStatus } : pedido
         )
       );
     } catch (err) {
-      setError(`Erro ao atualizar status do pedido #${pedidoId}: ${err.message}`);
-      // Poderia reverter a mudança visual no select se desejado
-      alert(`Erro ao atualizar status: ${err.message}`);
+      const errorInfo = handleApiError(err);
+      setError(`Erro ao atualizar status: ${errorInfo.message}`);
+      alert(`Erro ao atualizar status: ${errorInfo.message}`);
     } finally {
-      setUpdatingStatusId(null); // Remove loading do select
+      setUpdatingStatusId(null);
     }
   };
 
-  // Função para formatar data (exemplo)
   const formatarData = (dataString) => {
     if (!dataString) return '-';
     try {
@@ -102,11 +62,10 @@ const Pedidos = () => {
         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
       });
     } catch (e) {
-      return dataString; // Retorna a string original se a data for inválida
+      return dataString;
     }
   };
 
-  // Função para obter classe de cor baseada no status
   const getStatusColor = (status) => {
     switch (status) {
       case 'Pendente': return 'bg-yellow-100 text-yellow-800';
@@ -118,10 +77,9 @@ const Pedidos = () => {
     }
   };
 
-
   return (
     <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
-       <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800">Pedidos Recebidos</h2>
         <button
           onClick={carregarPedidos}
@@ -133,13 +91,13 @@ const Pedidos = () => {
         </button>
       </div>
 
-      {/* Indicador de Carregamento ou Erro */}
       {isLoading && (
         <div className="flex justify-center items-center py-10">
           <Loader2 className="h-8 w-8 animate-spin text-red-600" />
           <span className="ml-3 text-gray-600">Carregando pedidos...</span>
         </div>
       )}
+
       {!isLoading && error && (
         <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg flex items-center">
           <AlertCircle className="h-5 w-5 mr-3" />
@@ -147,7 +105,6 @@ const Pedidos = () => {
         </div>
       )}
 
-      {/* Tabela de Pedidos */}
       {!isLoading && !error && (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border border-gray-200">
@@ -158,7 +115,6 @@ const Pedidos = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                {/* Adicionar mais colunas se necessário (ex: Itens) */}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -166,22 +122,21 @@ const Pedidos = () => {
                 pedidos.map(pedido => (
                   <tr key={pedido.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{pedido.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{pedido.nomeCliente || 'Cliente Desconhecido'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatarData(pedido.dataPedido)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{pedido.nomeCliente || pedido.cliente?.nome || 'Cliente Desconhecido'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatarData(pedido.dataPedido || pedido.createdAt)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">R$ {pedido.valorTotal?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="relative flex items-center">
                         <select
                           value={pedido.status}
                           onChange={(e) => handleStatusChange(pedido.id, e.target.value)}
-                          disabled={updatingStatusId === pedido.id} // Desabilita enquanto atualiza
+                          disabled={updatingStatusId === pedido.id}
                           className={`appearance-none w-full text-xs font-medium rounded-full px-3 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 disabled:opacity-70 disabled:cursor-not-allowed ${getStatusColor(pedido.status)}`}
                         >
                           {statusOptions.map(status => (
                             <option key={status} value={status}>{status}</option>
                           ))}
                         </select>
-                         {/* Ícone de loading no select */}
                         {updatingStatusId === pedido.id && (
                           <Loader2 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-500" />
                         )}

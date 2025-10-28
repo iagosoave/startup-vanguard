@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { usuarioAPI, handleApiError } from '../services/api';
 
 const Cadastro = () => {
   const navigate = useNavigate();
@@ -22,15 +23,6 @@ const Cadastro = () => {
     nomeEmpresa: 30,
     email: 30
   };
-
-  // const [users, setUsers] = useState(() => { // Comentado: Lógica de API substituirá localStorage
-  //   const savedUsers = localStorage.getItem('autofacil_users');
-  //   return savedUsers ? JSON.parse(savedUsers) : [];
-  // });
-
-  // useEffect(() => { // Comentado: Lógica de API substituirá localStorage
-  //   localStorage.setItem('autofacil_users', JSON.stringify(users));
-  // }, [users]);
 
   const formatPhoneNumber = (value) => {
     const numbers = value.replace(/\D/g, '');
@@ -83,62 +75,49 @@ const Cadastro = () => {
       return;
     }
     setIsSubmitting(true);
+    setErrors({});
     
-    // ===================================================
-    // INÍCIO - LÓGICA DE API DO BACKEND (COMENTADO)
-    // ===================================================
-    // try {
-    //   const { confirmPassword, ...apiData } = formData;
-    //   const response = await fetch('URL_DA_SUA_API/cadastro', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(apiData),
-    //   });
-    //   const data = await response.json();
-    //   if (response.ok) {
-    //     sessionStorage.setItem('autofacil_currentUser', JSON.stringify(data.user)); // ou data.token
-    //     setCadastroSuccess(true);
-    //     setTimeout(() => { navigate('/dashboard'); }, 2000);
-    //   } else {
-    //     if (data.message?.includes('email_duplicado')) setErrors(prev => ({ ...prev, email: 'Este email já está registrado' }));
-    //     else if (data.message?.includes('cnpj_duplicado')) setErrors(prev => ({ ...prev, cnpj: 'Este CNPJ já está registrado' }));
-    //     else setErrors(prev => ({ ...prev, form: data.message || 'Erro ao cadastrar' }));
-    //   }
-    // } catch (err) {
-    //   setErrors(prev => ({ ...prev, form: 'Não foi possível conectar ao servidor.' }));
-    //   console.error(err);
-    // } finally {
-    //   setIsSubmitting(false);
-    // }
-    // ===================================================
-    // FIM - LÓGICA DE API DO BACKEND
-    // ===================================================
-
-    // MOCK ATUAL (SIMULAÇÃO LOCAL)
-    const savedUsers = localStorage.getItem('autofacil_users');
-    const users = savedUsers ? JSON.parse(savedUsers) : [];
-    if (users.some(user => user.email === formData.email)) {
-      setErrors(prev => ({ ...prev, email: 'Este email já está registrado' }));
-      setIsSubmitting(false);
-      return;
-    }
-    setTimeout(() => {
-      const newUser = {
-        id: Date.now().toString(),
-        nomeEmpresa: formData.nomeEmpresa,
-        cnpj: formData.cnpj,
+    try {
+      const usuarioData = {
+        nome: formData.nomeEmpresa,
         email: formData.email,
-        telefone: formData.telefone,
-        tipoUsuario: formData.tipoUsuario,
-        password: formData.password, 
+        senha: formData.password,
+        telefone: formData.telefone.replace(/\D/g, ''), 
+        cnpj: formData.cnpj.replace(/\D/g, ''), 
+        tipoUsuario: formData.tipoUsuario.toUpperCase() 
       };
-      localStorage.setItem('autofacil_users', JSON.stringify([...users, newUser]));
-      sessionStorage.setItem('autofacil_currentUser', JSON.stringify(newUser));
+
+      const response = await usuarioAPI.create(usuarioData);
+      
+      const { authAPI } = await import('../services/api');
+      const loginResponse = await authAPI.login(formData.email, formData.password);
+      
+      const userData = {
+        ...response,
+        token: loginResponse.jwt,
+        tipoUsuario: formData.tipoUsuario
+      };
+      
+      sessionStorage.setItem('autofacil_currentUser', JSON.stringify(userData));
       setCadastroSuccess(true);
+      
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+      
+    } catch (err) {
+      const errorInfo = handleApiError(err);
+      
+      if (errorInfo.message.toLowerCase().includes('email')) {
+        setErrors(prev => ({ ...prev, email: 'Este email já está registrado' }));
+      } else if (errorInfo.message.toLowerCase().includes('cnpj')) {
+        setErrors(prev => ({ ...prev, cnpj: 'Este CNPJ já está registrado' }));
+      } else {
+        setErrors(prev => ({ ...prev, form: errorInfo.message }));
+      }
+    } finally {
       setIsSubmitting(false);
-      setTimeout(() => { navigate('/dashboard'); }, 2000);
-    }, 1000);
-    // FIM DO MOCK
+    }
   };
 
   return (
@@ -146,7 +125,6 @@ const Cadastro = () => {
       <div className="absolute top-0 left-0 w-full z-20 px-4 sm:px-8 py-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center">
-            {/* LOGO ATUALIZADA COM CORES */}
             <Link to="/" className="text-xl md:text-2xl font-bold tracking-tight text-black">
               Peça<span className="text-red-600">Já!</span>
             </Link>

@@ -45,7 +45,6 @@ const ContactSection = () => {
   return (
     <section className="w-full bg-gray-50 text-gray-900 py-24 px-6">
       <div className="max-w-4xl mx-auto">
-        {/* Cabeçalho com estilo minimalista */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase mb-4">
             FAQ
@@ -60,7 +59,6 @@ const ContactSection = () => {
           </p>
         </div>
         
-        {/* Lista de FAQs */}
         <div className="space-y-2">
           {faqs.map((faq, index) => (
             <div key={index} className="border border-gray-200 bg-white overflow-hidden">

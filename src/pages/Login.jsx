@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { authAPI, usuarioAPI, handleApiError } from '../services/api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -11,25 +12,18 @@ const Login = () => {
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // const [users, setUsers] = useState([]); // Comentado: Lógica de API substituirá localStorage
-
   useEffect(() => {
     const currentUserJson = sessionStorage.getItem('autofacil_currentUser');
     if (currentUserJson) {
       navigate('/dashboard');
     }
 
-    // const savedUsers = localStorage.getItem('autofacil_users'); // Comentado
-    // if (savedUsers) {
-    //   setUsers(JSON.parse(savedUsers));
-    // }
-
     const savedEmail = localStorage.getItem('autofacil_rememberedEmail');
     if (savedEmail) {
       setEmail(savedEmail);
       setRememberMe(true);
     }
-  }, []);
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,37 +36,42 @@ const Login = () => {
 
     setIsLoading(true);
 
-    // ===================================================
-    // INÍCIO - LÓGICA DE API DO BACKEND (COMENTADO)
-    // ===================================================
-    // try {
-    //   const response = await fetch('URL_DA_SUA_API/login', { /* ... */ });
-    //   const data = await response.json();
-    //   if (response.ok) { /* ... */ } else { /* ... */ }
-    // } catch (err) { /* ... */ } finally { /* ... */ }
-    // ===================================================
-    // FIM - LÓGICA DE API DO BACKEND
-    // ===================================================
+    try {
+      const loginResponse = await authAPI.login(email, password);
+      
+     
+      const userData = {
+        email: email,
+        token: loginResponse.jwt,
+        
+      };
 
-    // MOCK ATUAL (SIMULAÇÃO LOCAL)
-    const savedUsers = localStorage.getItem('autofacil_users');
-    const users = savedUsers ? JSON.parse(savedUsers) : [];
-    setTimeout(() => {
-      const user = users.find(u => u.email === email && u.password === password);
-      if (user) {
-        if (rememberMe) {
-          localStorage.setItem('autofacil_rememberedEmail', email);
-        } else {
-          localStorage.removeItem('autofacil_rememberedEmail');
-        }
-        sessionStorage.setItem('autofacil_currentUser', JSON.stringify(user));
-        setLoginSuccess(true);
-        setTimeout(() => { navigate('/dashboard'); }, 1500);
+      if (rememberMe) {
+        localStorage.setItem('autofacil_rememberedEmail', email);
       } else {
-        setError('Email ou senha incorretos');
+        localStorage.removeItem('autofacil_rememberedEmail');
       }
+
+      sessionStorage.setItem('autofacil_currentUser', JSON.stringify(userData));
+      setLoginSuccess(true);
+
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+
+    } catch (err) {
+      const errorInfo = handleApiError(err);
+      
+      if (errorInfo.status === 401 || errorInfo.message.toLowerCase().includes('credenciais')) {
+        setError('Email ou senha incorretos');
+      } else if (errorInfo.status === 0) {
+        setError('Não foi possível conectar ao servidor. Verifique sua conexão.');
+      } else {
+        setError(errorInfo.message || 'Erro ao fazer login. Tente novamente.');
+      }
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -80,7 +79,6 @@ const Login = () => {
       <div className="absolute top-0 left-0 w-full z-20 px-4 sm:px-8 py-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center">
-            {/* LOGO ATUALIZADA COM CORES */}
             <Link to="/" className="text-xl md:text-2xl font-bold tracking-tight text-black">
               Peça<span className="text-red-600">Já!</span>
             </Link>
@@ -132,7 +130,6 @@ const Login = () => {
       <div className="absolute bottom-4 left-0 w-full text-center z-20">
         <div className="flex items-center justify-center">
           <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
-          {/* LOGO ATUALIZADA COM CORES */}
           <p className="text-xs uppercase tracking-wider text-gray-400 mx-4">
             © 2025 Peça<span className="text-red-600">Já!</span>
           </p>

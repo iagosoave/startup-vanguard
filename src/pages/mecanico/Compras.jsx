@@ -1,30 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
-
-// ===================================================
-// INÍCIO - LÓGICA DE API DO BACKEND (COMENTADO)
-// ===================================================
-// const fetchComprasAPI = async () => {
-//   try {
-//     // Substitua pela URL real da sua API para buscar o histórico de compras do mecânico
-//     const response = await fetch('URL_DA_SUA_API/mecanico/compras'); 
-//     if (!response.ok) {
-//       throw new Error('Erro ao buscar histórico de compras');
-//     }
-//     const data = await response.json();
-//     // A API deve retornar um array de compras, por exemplo:
-//     // [{ id: 'P-123', dataCompra: '2025-10-26T10:00:00Z', status: 'Entregue', valorTotal: 150.50, itens: [...] }, ...]
-//     // Ordenar por data mais recente (exemplo)
-//     return data.sort((a, b) => new Date(b.dataCompra) - new Date(a.dataCompra));
-//   } catch (error) {
-//     console.error("API Error (fetchComprasAPI):", error);
-//     throw error; 
-//   }
-// };
-// ===================================================
-// FIM - LÓGICA DE API DO BACKEND
-// ===================================================
-
+import { pedidoAPI, handleApiError } from '../../services/api';
 
 const ComprasPage = () => {
   const [compras, setCompras] = useState([]);
@@ -35,13 +11,20 @@ const ComprasPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // const comprasData = await fetchComprasAPI(); // CHAMADA API REAL
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simula delay API
-      const comprasData = []; // Simula resposta vazia (sem mocks)
+      const currentUser = JSON.parse(sessionStorage.getItem('autofacil_currentUser'));
+      const todosPedidos = await pedidoAPI.getAll();
       
-      setCompras(comprasData);
+  
+      const comprasData = todosPedidos.filter(p => p.usuarioId === currentUser?.id || true); 
+      
+      const comprasOrdenadas = comprasData.sort((a, b) => 
+        new Date(b.dataCompra || b.dataPedido || b.createdAt) - new Date(a.dataCompra || a.dataPedido || a.createdAt)
+      );
+      
+      setCompras(comprasOrdenadas);
     } catch (err) {
-      setError(err.message || 'Falha ao carregar histórico de compras.');
+      const errorInfo = handleApiError(err);
+      setError(errorInfo.message);
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +32,7 @@ const ComprasPage = () => {
 
   useEffect(() => {
     carregarCompras();
-  }, []); // Roda apenas uma vez ao montar
+  }, []);
 
   const formatarData = (dataString) => {
     if (!dataString) return '-';
@@ -57,7 +40,9 @@ const ComprasPage = () => {
       return new Date(dataString).toLocaleDateString('pt-BR', {
         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
       });
-    } catch (e) { return dataString; }
+    } catch (e) { 
+      return dataString; 
+    }
   };
 
   const getStatusColor = (status) => {
@@ -108,15 +93,14 @@ const ComprasPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                {/* Adicionar coluna 'Ver Detalhes' se necessário */}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {compras.length > 0 ? (
                 compras.map(compra => (
                   <tr key={compra.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{compra.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatarData(compra.dataCompra)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{compra.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatarData(compra.dataCompra || compra.dataPedido || compra.createdAt)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(compra.status)}`}>
                         {compra.status || 'Desconhecido'}
@@ -125,15 +109,6 @@ const ComprasPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">
                       R$ {compra.valorTotal?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
                     </td>
-                    {/* Exemplo de botão Detalhes: */}
-                    {/* <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                      <button 
-                        onClick={() => alert(`Detalhes do pedido ${compra.id}`)} 
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Ver Detalhes
-                      </button>
-                    </td> */}
                   </tr>
                 ))
               ) : (
