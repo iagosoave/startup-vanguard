@@ -17,7 +17,6 @@ const Login = () => {
     if (currentUserJson) {
       navigate('/dashboard');
     }
-
     const savedEmail = localStorage.getItem('autofacil_rememberedEmail');
     if (savedEmail) {
       setEmail(savedEmail);
@@ -39,11 +38,20 @@ const Login = () => {
     try {
       const loginResponse = await authAPI.login(email, password);
       
-     
+      if (!loginResponse.token) {
+        setError('Resposta inválida do servidor');
+        setIsLoading(false);
+        return;
+      }
+
+      const usuarioCompleto = loginResponse.usuario || loginResponse.user;
+      
       const userData = {
+        id: usuarioCompleto?.id,
+        nome: usuarioCompleto?.nome,
         email: email,
-        token: loginResponse.jwt,
-        
+        token: loginResponse.token,
+        tipoUsuario: usuarioCompleto?.tipoUsuario?.toLowerCase() || 'mecanica',
       };
 
       if (rememberMe) {

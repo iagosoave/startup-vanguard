@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { usuarioAPI, handleApiError } from '../services/api';
+import { usuarioAPI, authAPI, handleApiError } from '../services/api';
 
 const Cadastro = () => {
   const navigate = useNavigate();
@@ -87,14 +87,15 @@ const Cadastro = () => {
         tipoUsuario: formData.tipoUsuario.toUpperCase() 
       };
 
-      const response = await usuarioAPI.create(usuarioData);
+      const usuarioCriado = await usuarioAPI.create(usuarioData);
       
-      const { authAPI } = await import('../services/api');
       const loginResponse = await authAPI.login(formData.email, formData.password);
       
       const userData = {
-        ...response,
-        token: loginResponse.jwt,
+        id: usuarioCriado.id,
+        nome: formData.nomeEmpresa,
+        email: formData.email,
+        token: loginResponse.token,
         tipoUsuario: formData.tipoUsuario
       };
       

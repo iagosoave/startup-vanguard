@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Hero from './components/Hero';
 import SystemDescription from './components/SystemDescription';
 import MainFeatures from './components/MainFeatures';
-import PricingSection from './components/PricingSection';
+// import PricingSection from './components/PricingSection';
 import ContactSection from './components/ContactSection';
 import TeamSection from './components/TeamSection';
 import Login from './pages/Login';
