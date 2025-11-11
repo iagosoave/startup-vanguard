@@ -38,7 +38,8 @@ const Login = () => {
     try {
       const loginResponse = await authAPI.login(email, password);
       
-      if (!loginResponse.token) {
+      // Alterado de loginResponse.token para loginResponse.jwt
+      if (!loginResponse.jwt) {
         setError('Resposta inválida do servidor');
         setIsLoading(false);
         return;
@@ -50,7 +51,7 @@ const Login = () => {
         id: usuarioCompleto?.id,
         nome: usuarioCompleto?.nome,
         email: email,
-        token: loginResponse.token,
+        jwt: loginResponse.jwt, // Alterado de token para jwt
         tipoUsuario: usuarioCompleto?.tipoUsuario?.toLowerCase() || 'mecanica',
       };
 

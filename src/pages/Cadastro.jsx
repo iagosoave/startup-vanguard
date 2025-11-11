@@ -91,11 +91,12 @@ const Cadastro = () => {
       
       const loginResponse = await authAPI.login(formData.email, formData.password);
       
+      // Alterado de token para jwt
       const userData = {
         id: usuarioCriado.id,
         nome: formData.nomeEmpresa,
         email: formData.email,
-        token: loginResponse.token,
+        jwt: loginResponse.jwt, // Alterado de token para jwt
         tipoUsuario: formData.tipoUsuario
       };
       
