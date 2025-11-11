@@ -48,6 +48,11 @@ const ChatbotPedidos = () => {
     adicionarMensagem(texto, 'usuario', 'texto');
   };
 
+  // Função para obter a URL da imagem corretamente
+  const obterImagemProduto = (produto) => {
+    return produto.urlFoto || 'https://via.placeholder.com/40';
+  };
+
   const processarInputUsuario = async () => {
     const input = inputUsuario.trim();
     if (!input || buscandoProdutos || estadoConversa === 'finalizando' || processandoCheckout) return;
@@ -142,6 +147,21 @@ const ChatbotPedidos = () => {
     }
   };
 
+  // Função para criar estrutura de endereço a partir do texto
+  const criarEndereco = (enderecoTexto) => {
+    // Implementação básica - você pode querer dividir em campos específicos
+    // ou criar um formulário mais detalhado para endereço
+    return {
+      logradouro: enderecoTexto,
+      numero: "S/N",
+      complemento: "",
+      bairro: "",
+      cidade: "",
+      estado: "",
+      cep: ""
+    };
+  };
+
   const handleFinalizarCompra = async (e) => {
     e.preventDefault();
     if (!checkoutNome || !checkoutEndereco) { 
@@ -155,19 +175,21 @@ const ChatbotPedidos = () => {
     try {
       const currentUser = JSON.parse(sessionStorage.getItem('autofacil_currentUser'));
       
+      // Baseado no PedidoRequestDTO, criar o pedido diretamente
+      // O carrinho parece ser gerenciado automaticamente pelo backend
       const pedidoData = {
-        usuarioId: currentUser?.id,
-        nomeCliente: checkoutNome,
-        endereco: checkoutEndereco,
-        formaPagamento: checkoutPagamento,
-        valorTotal: calcularTotalCarrinho(),
-        status: 'Pendente',
+        idComprador: currentUser?.id,
+        enderecoEntrega: criarEndereco(checkoutEndereco),
+        // Incluir os itens do carrinho diretamente no pedido
         itens: carrinho.map(item => ({
           produtoId: item.produto.id,
           quantidade: item.quantidade,
           precoUnitario: item.produto.preco
-        }))
+        })),
+        valorTotal: calcularTotalCarrinho()
       };
+
+      console.log('Enviando pedido:', pedidoData); // Para debug
 
       const pedidoCriado = await pedidoAPI.create(pedidoData);
       
@@ -185,10 +207,13 @@ const ChatbotPedidos = () => {
       setShowCheckoutModal(false);
       setCheckoutPagamento('cartao');
       setResultadosBusca([]);
+      setCheckoutEndereco(''); // Limpar endereço após compra
       
     } catch (err) {
       const errorInfo = handleApiError(err);
+      setMensagens(prev => prev.filter(m => !(m.autor === 'bot' && m.tipo === 'componente')));
       adicionarMensagemBot(`Erro ao finalizar pedido: ${errorInfo.message}`);
+      console.error('Erro detalhado:', err); // Para debug
     } finally {
       setProcessandoCheckout(false);
       setEstadoConversa('inicial');
@@ -213,7 +238,14 @@ const ChatbotPedidos = () => {
                   {msg.texto.map(produto => (
                     <div key={produto.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 shadow-sm max-w-sm hover:border-red-300 transition-colors">
                       <div className="flex items-center overflow-hidden mr-3">
-                        <img src={produto.imagemUrl || 'https://via.placeholder.com/40'} alt={produto.nome} className="w-10 h-10 object-cover rounded-md mr-3 flex-shrink-0 border" />
+                        <img 
+                          src={obterImagemProduto(produto)} 
+                          alt={produto.nome} 
+                          className="w-10 h-10 object-cover rounded-md mr-3 flex-shrink-0 border" 
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/40';
+                          }}
+                        />
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">{produto.nome}</p>
                           <p className="text-sm text-red-600 font-semibold">{`R$ ${produto.preco.toFixed(2)}`}</p>
@@ -293,7 +325,14 @@ const ChatbotPedidos = () => {
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {carrinho.length > 0 ? carrinho.map(item => (
                 <div key={item.produto.id} className="flex items-start border-b border-gray-200 pb-4 last:border-b-0">
-                  <img src={item.produto.imagemUrl || "https://via.placeholder.com/80"} alt={item.produto.nome} className="h-20 w-20 flex-shrink-0 rounded-md border border-gray-200 object-cover mr-4"/>
+                  <img 
+                    src={obterImagemProduto(item.produto)} 
+                    alt={item.produto.nome} 
+                    className="h-20 w-20 flex-shrink-0 rounded-md border border-gray-200 object-cover mr-4"
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/80";
+                    }}
+                  />
                   <div className="flex-1 flex flex-col">
                     <div className="flex justify-between text-base font-medium text-gray-900">
                       <h4 className="truncate pr-2" title={item.produto.nome}>{item.produto.nome}</h4>
@@ -352,21 +391,18 @@ const ChatbotPedidos = () => {
                 <input type="text" id="checkoutNome" value={checkoutNome} onChange={(e) => setCheckoutNome(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" disabled={processandoCheckout}/>
               </div>
               <div>
-                <label htmlFor="checkoutEndereco" className="block text-sm font-medium text-gray-700 mb-1">Endereço <span className="text-red-500">*</span></label>
-                <textarea id="checkoutEndereco" rows={3} value={checkoutEndereco} onChange={(e) => setCheckoutEndereco(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" placeholder="Rua Exemplo, 123..." disabled={processandoCheckout}/>
-              </div>
-              <div>
-                <h4 className="text-base font-medium text-gray-700 mb-2">Pagamento</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <input id="payCartao" name="pagamento" type="radio" value="cartao" checked={checkoutPagamento === 'cartao'} onChange={(e) => setCheckoutPagamento(e.target.value)} className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300" disabled={processandoCheckout}/>
-                    <label htmlFor="payCartao" className="ml-3 block text-sm font-medium text-gray-700">Cartão</label>
-                  </div>
-                  <div className="flex items-center">
-                    <input id="payPix" name="pagamento" type="radio" value="pix" checked={checkoutPagamento === 'pix'} onChange={(e) => setCheckoutPagamento(e.target.value)} className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300" disabled={processandoCheckout}/>
-                    <label htmlFor="payPix" className="ml-3 block text-sm font-medium text-gray-700">PIX</label>
-                  </div>
-                </div>
+                <label htmlFor="checkoutEndereco" className="block text-sm font-medium text-gray-700 mb-1">Endereço Completo <span className="text-red-500">*</span></label>
+                <textarea 
+                  id="checkoutEndereco" 
+                  rows={3} 
+                  value={checkoutEndereco} 
+                  onChange={(e) => setCheckoutEndereco(e.target.value)} 
+                  required 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" 
+                  placeholder="Rua Exemplo, 123, Bairro, Cidade - Estado, CEP..."
+                  disabled={processandoCheckout}
+                />
+                <p className="text-xs text-gray-500 mt-1">Informe o endereço completo para entrega</p>
               </div>
               <div className="pt-4 border-t border-gray-200">
                 <button type="submit" className="w-full flex items-center justify-center rounded-lg border border-transparent bg-red-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-red-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed" disabled={processandoCheckout || carrinho.length === 0}>

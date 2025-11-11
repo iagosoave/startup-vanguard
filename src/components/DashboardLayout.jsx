@@ -26,6 +26,10 @@ const DashboardLayout = ({ children }) => {
     return <div className="flex items-center justify-center h-screen bg-gray-100">Carregando...</div>;
   }
 
+  // ✅ ADICIONAR APENAS ESTA LÓGICA
+  const tipoUsuario = currentUser?.tipoUsuario?.toUpperCase();
+  const isLojista = tipoUsuario === 'LOJISTA' || tipoUsuario === 'AUTOPECA';
+
   const empresaNome = "Peça Já!";
   const corTextoPrincipal = "text-red-600";
 
@@ -44,7 +48,8 @@ const DashboardLayout = ({ children }) => {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2">
-          {currentUser.tipoUsuario === 'autopeca' ? (
+          {/* ✅ CORRIGIR APENAS ESTA CONDIÇÃO */}
+          {isLojista ? (
             <>
               <SidebarLink to="/dashboard" icon="chart-pie" text="Dashboard" isSidebarOpen={isSidebarOpen} location={location} />
               <SidebarLink to="/dashboard/estoque" icon="cube" text="Estoque" isSidebarOpen={isSidebarOpen} location={location} />
@@ -80,10 +85,11 @@ const DashboardLayout = ({ children }) => {
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
                     <div className="text-sm font-medium text-gray-800">
-                      {currentUser.nomeEmpresa}
+                      {currentUser.nome || currentUser.nomeEmpresa}
                     </div>
                     <div className="text-xs text-gray-500">
-                      ({currentUser.tipoUsuario === 'autopeca' ? 'Autopeça' : 'Mecânica'})
+                      {/* ✅ CORRIGIR APENAS ESTA LINHA */}
+                      ({isLojista ? 'Lojista' : 'Comprador'})
                     </div>
                   </div>
                   <button

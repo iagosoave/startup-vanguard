@@ -11,10 +11,9 @@ const Cadastro = () => {
     telefone: '',
     password: '',
     confirmPassword: '',
-    tipoUsuario: 'COMPRADOR', // ✅ MUDADO: Usar COMPRADOR por padrão
-    // Endereço
+    tipoUsuario: 'COMPRADOR',
     cep: '',
-    rua: '', // ✅ MUDADO: Era logradouro, agora é rua
+    rua: '',
     numero: '',
     complemento: '',
     bairro: '',
@@ -124,9 +123,8 @@ const Cadastro = () => {
     setErrors({});
     
     try {
-      // ✅ ENDEREÇO NO FORMATO CORRETO (como o Postman)
       const endereco = showEndereco ? {
-        rua: formData.rua, // ✅ Agora é 'rua', não 'logradouro'
+        rua: formData.rua,
         numero: formData.numero,
         complemento: formData.complemento || null,
         bairro: formData.bairro,
@@ -135,19 +133,17 @@ const Cadastro = () => {
         cep: formData.cep.replace(/\D/g, '')
       } : null;
 
-      // ✅ DADOS NO FORMATO EXATO DO POSTMAN
       const usuarioData = {
         email: formData.email,
         password: formData.password,
         telefone: formData.telefone.replace(/\D/g, ''),
         nomeCompleto: formData.nomeEmpresa,
         documento: formData.cnpj.replace(/\D/g, ''),
-        tipoPessoa: 'Fisica', // ✅ MUDADO: Postman usa 'Fisica', não 'JURIDICA'
-        tipoUsuario: formData.tipoUsuario, // Agora pode ser COMPRADOR, LOJISTA, etc
+        tipoPessoa: 'Fisica',
+        tipoUsuario: formData.tipoUsuario,
         endereco: endereco
       };
 
-      // ✅ LOGS DETALHADOS
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('📤 [CADASTRO] Dados que serão enviados:');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -157,12 +153,10 @@ const Cadastro = () => {
       const usuarioCriado = await usuarioAPI.create(usuarioData);
       console.log('✅ [CADASTRO] Resposta do servidor:', usuarioCriado);
       
-      // Login automático
       console.log('🔐 [CADASTRO] Tentando login automático...');
       const loginResponse = await authAPI.login(formData.email, formData.password);
       console.log('✅ [CADASTRO] Login realizado:', loginResponse);
       
-      // Salvar no sessionStorage
       const userData = {
         id: usuarioCriado.id,
         nome: formData.nomeEmpresa,
@@ -173,10 +167,12 @@ const Cadastro = () => {
       
       sessionStorage.setItem('autofacil_currentUser', JSON.stringify(userData));
       console.log('💾 [CADASTRO] Dados salvos no sessionStorage:', userData);
+      console.log('🎯 [CADASTRO] Tipo de usuário:', formData.tipoUsuario);
       
       setCadastroSuccess(true);
       
       setTimeout(() => {
+        console.log('🚀 [CADASTRO] Redirecionando para dashboard...');
         navigate('/dashboard');
       }, 2000);
       
@@ -208,7 +204,6 @@ const Cadastro = () => {
 
   return (
     <section className="w-full min-h-screen bg-white text-black flex items-center justify-center relative overflow-hidden py-20">
-      {/* Header */}
       <div className="absolute top-0 left-0 w-full z-20 px-4 sm:px-8 py-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center">
@@ -219,11 +214,9 @@ const Cadastro = () => {
         </div>
       </div>
       
-      {/* Decorative Lines */}
       <div className="absolute top-0 left-0 w-1 h-32 bg-red-600"></div>
       <div className="absolute bottom-0 right-0 w-1 h-32 bg-red-600"></div>
       
-      {/* Form Container */}
       <div className="max-w-xl w-full mx-auto px-4 sm:px-8 py-12 bg-white z-10 mt-12 shadow-lg rounded-lg">
         <div className="mb-10 text-center">
           <div className="flex justify-center"><div className="w-12 h-1 bg-red-600 mb-6"></div></div>
@@ -232,23 +225,23 @@ const Cadastro = () => {
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* ✅ SELEÇÃO DE TIPO DE USUÁRIO */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div 
-              className={`border p-4 text-center cursor-pointer transition-all duration-300 ${formData.tipoUsuario === 'COMPRADOR' ? 'border-red-600 text-red-600' : 'border-gray-300'}`}
+              className={`border p-4 text-center cursor-pointer transition-all duration-300 ${formData.tipoUsuario === 'COMPRADOR' ? 'border-red-600 bg-red-50 text-red-600' : 'border-gray-300 hover:border-red-300'}`}
               onClick={() => handleChange({ target: { name: 'tipoUsuario', value: 'COMPRADOR' } })}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-              <span className="text-sm">Comprador</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              <span className="text-sm font-medium">Comprador / Mecânica</span>
+              <p className="text-xs text-gray-500 mt-1">Buscar peças</p>
             </div>
             <div 
-              className={`border p-4 text-center cursor-pointer transition-all duration-300 ${formData.tipoUsuario === 'LOJISTA' ? 'border-red-600 text-red-600' : 'border-gray-300'}`}
+              className={`border p-4 text-center cursor-pointer transition-all duration-300 ${formData.tipoUsuario === 'LOJISTA' ? 'border-red-600 bg-red-50 text-red-600' : 'border-gray-300 hover:border-red-300'}`}
               onClick={() => handleChange({ target: { name: 'tipoUsuario', value: 'LOJISTA' } })}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-              <span className="text-sm">Lojista</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+              <span className="text-sm font-medium">Lojista / Autopeça</span>
+              <p className="text-xs text-gray-500 mt-1">Vender peças</p>
             </div>
           </div>
           
-          {/* Nome da Empresa */}
           <div>
             <label htmlFor="nomeEmpresa" className="block text-sm font-medium text-gray-700 mb-1">Nome Completo / Empresa</label>
             <div className="relative">
@@ -258,14 +251,12 @@ const Cadastro = () => {
             {errors.nomeEmpresa && <p className="text-red-500 text-xs mt-1">{errors.nomeEmpresa}</p>}
           </div>
           
-          {/* CNPJ/CPF */}
           <div>
             <label htmlFor="cnpj" className="block text-sm font-medium text-gray-700 mb-1">CNPJ / CPF</label>
             <input id="cnpj" name="cnpj" type="text" required value={formData.cnpj} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.cnpj ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="XX.XXX.XXX/XXXX-XX" maxLength="18"/>
             {errors.cnpj && <p className="text-red-500 text-xs mt-1">{errors.cnpj}</p>}
           </div>
           
-          {/* Email */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <div className="relative">
@@ -275,14 +266,12 @@ const Cadastro = () => {
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
           
-          {/* Telefone */}
           <div>
             <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
             <input id="telefone" name="telefone" type="tel" required value={formData.telefone} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.telefone ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="(XX) XXXXX-XXXX"/>
             {errors.telefone && <p className="text-red-500 text-xs mt-1">{errors.telefone}</p>}
           </div>
           
-          {/* Senha */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
             <div className="relative">
@@ -294,7 +283,6 @@ const Cadastro = () => {
             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
           </div>
           
-          {/* Confirmar Senha */}
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
             <div className="relative">
@@ -306,7 +294,6 @@ const Cadastro = () => {
             {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
           </div>
 
-          {/* ✅ BOTÃO PARA ADICIONAR ENDEREÇO */}
           <div className="border-t pt-4">
             <button
               type="button"
@@ -316,7 +303,6 @@ const Cadastro = () => {
             </button>
           </div>
 
-          {/* ✅ CAMPOS DE ENDEREÇO */}
           {showEndereco && (
             <div className="space-y-4 border p-4 rounded bg-gray-50">
               <h3 className="font-medium text-gray-700">Endereço</h3>
@@ -368,7 +354,6 @@ const Cadastro = () => {
             </div>
           )}
           
-          {/* Termos */}
           <div className="flex items-center">
             <input id="termos" name="termos" type="checkbox" required className="h-4 w-4 text-red-600 focus:ring-red-600 border-gray-300 rounded"/>
             <label htmlFor="termos" className="ml-2 block text-sm text-gray-700">Eu concordo com os <a href="#" className="text-red-600 hover:text-red-700">termos de serviço</a> e <a href="#" className="text-red-600 hover:text-red-700">política de privacidade</a></label>
@@ -380,7 +365,6 @@ const Cadastro = () => {
             </div>
           )}
           
-          {/* Botão de Submissão */}
           <div>
             <button type="submit" disabled={isSubmitting} className={`w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 tracking-wider uppercase transition-all duration-300 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}>
               {isSubmitting ? 'Processando...' : 'Cadastrar'}
@@ -393,7 +377,6 @@ const Cadastro = () => {
         <div className="mt-8 text-center"><p className="text-gray-600">Já tem uma conta? <Link to="/login" className="text-red-600 hover:text-red-700 font-medium">Entrar</Link></p></div>
       </div>
       
-      {/* Footer */}
       <div className="absolute bottom-4 left-0 w-full text-center z-20">
         <div className="flex items-center justify-center">
           <div className="h-px w-12 sm:w-16 bg-gray-300"></div>

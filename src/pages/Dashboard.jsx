@@ -2,16 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 
-// Autopeça
+// Autopeça/Lojista
 import AutopecaDashboard from './autopeca/Dashboard';
 import EstoquePage from './autopeca/Estoque';
 import PedidosPage from './autopeca/Pedidos';
 
-// Mecânico
+// Mecânico/Comprador
 import ComprasPage from './mecanico/Compras';
 import ChatbotPedidos from './mecanico/AssistenteAIPedidos'; 
-// Chat removido para Autopeça
-// import ChatPage from './comum/Chat'; 
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -22,35 +20,51 @@ const Dashboard = () => {
     const userInfo = sessionStorage.getItem('autofacil_currentUser');
     if (userInfo) {
       const user = JSON.parse(userInfo);
+      console.log('👤 [DASHBOARD] Usuário carregado:', user);
+      console.log('👤 [DASHBOARD] Tipo de usuário:', user.tipoUsuario);
       setCurrentUser(user);
       setIsLoading(false);
     } else {
+      console.log('⚠️ [DASHBOARD] Nenhum usuário encontrado, redirecionando para login');
       navigate('/login');
     }
   }, [navigate]);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
   }
+
+  // ✅ NORMALIZAR o tipo de usuário (aceitar maiúscula e minúscula)
+  const tipoUsuario = currentUser?.tipoUsuario?.toUpperCase();
+  const isLojista = tipoUsuario === 'LOJISTA' || tipoUsuario === 'AUTOPECA';
+  
+  console.log('🔍 [DASHBOARD] Tipo normalizado:', tipoUsuario);
+  console.log('🔍 [DASHBOARD] É lojista?', isLojista);
 
   return (
     <DashboardLayout>
       <Routes>
-        {currentUser?.tipoUsuario === 'autopeca' ? (
-          // Rotas para Autopeça (SEM CHAT)
+        {isLojista ? (
+          // ✅ Rotas para LOJISTA/AUTOPEÇA
           <>
             <Route path="/" element={<AutopecaDashboard />} />
             <Route path="/estoque" element={<EstoquePage />} />
             <Route path="/pedidos" element={<PedidosPage />} />
-            {/* <Route path="/chat" element={<ChatPage userType="autopeca" />} /> REMOVIDO */}
-            <Route path="*" element={<Navigate to="/" replace />} /> {/* Redireciona para o dashboard principal */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </>
         ) : (
-          // Rotas para Mecânico (com Chatbot)
+          // ✅ Rotas para COMPRADOR/MECÂNICA
           <>
             <Route path="/" element={<ChatbotPedidos />} />
             <Route path="/compras" element={<ComprasPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} /> {/* Redireciona para o chatbot */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </>
         )}
       </Routes>

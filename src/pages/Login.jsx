@@ -50,7 +50,6 @@ const Login = () => {
         todasAsChaves: Object.keys(loginResponse)
       });
       
-      // Verificar se tem JWT ou token
       const authToken = loginResponse.jwt || loginResponse.token;
       
       if (!authToken) {
@@ -72,13 +71,14 @@ const Login = () => {
       
       const userData = {
         id: usuarioCompleto?.id,
-        nome: usuarioCompleto?.nome,
+        nome: usuarioCompleto?.nomeCompleto || usuarioCompleto?.nome,
         email: email,
-        jwt: authToken, // Usa jwt OU token, o que vier
-        tipoUsuario: usuarioCompleto?.tipoUsuario?.toLowerCase() || 'mecanica',
+        jwt: authToken,
+        tipoUsuario: usuarioCompleto?.tipoUsuario || 'COMPRADOR',
       };
 
       console.log('💾 [LOGIN] Salvando userData no sessionStorage:', userData);
+      console.log('🎯 [LOGIN] Tipo de usuário:', userData.tipoUsuario);
 
       if (rememberMe) {
         localStorage.setItem('autofacil_rememberedEmail', email);
