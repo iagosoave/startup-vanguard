@@ -15,6 +15,7 @@ const Login = () => {
   useEffect(() => {
     const currentUserJson = sessionStorage.getItem('autofacil_currentUser');
     if (currentUserJson) {
+      console.log('👤 [LOGIN] Usuário já logado, redirecionando...');
       navigate('/dashboard');
     }
     const savedEmail = localStorage.getItem('autofacil_rememberedEmail');
@@ -33,27 +34,51 @@ const Login = () => {
       return;
     }
 
+    console.log('🚀 [LOGIN] Iniciando processo de login...');
+    console.log('📧 [LOGIN] Email:', email);
     setIsLoading(true);
 
     try {
       const loginResponse = await authAPI.login(email, password);
       
-      // Alterado de loginResponse.token para loginResponse.jwt
-      if (!loginResponse.jwt) {
-        setError('Resposta inválida do servidor');
+      console.log('🔥 [LOGIN] RESPONSE COMPLETO DO BACKEND:', loginResponse);
+      console.log('🔍 [LOGIN] Estrutura do response:', {
+        temJWT: !!loginResponse.jwt,
+        temToken: !!loginResponse.token,
+        temUsuario: !!loginResponse.usuario,
+        temUser: !!loginResponse.user,
+        todasAsChaves: Object.keys(loginResponse)
+      });
+      
+      // Verificar se tem JWT ou token
+      const authToken = loginResponse.jwt || loginResponse.token;
+      
+      if (!authToken) {
+        console.error('❌ [LOGIN] Nem JWT nem token encontrados no response!');
+        setError('Resposta inválida do servidor - sem token de autenticação');
         setIsLoading(false);
         return;
       }
 
+      console.log('✅ [LOGIN] Token encontrado:', authToken.substring(0, 50) + '...');
+
       const usuarioCompleto = loginResponse.usuario || loginResponse.user;
+      
+      if (!usuarioCompleto) {
+        console.warn('⚠️ [LOGIN] Dados do usuário não encontrados no response');
+      } else {
+        console.log('👤 [LOGIN] Dados do usuário:', usuarioCompleto);
+      }
       
       const userData = {
         id: usuarioCompleto?.id,
         nome: usuarioCompleto?.nome,
         email: email,
-        jwt: loginResponse.jwt, // Alterado de token para jwt
+        jwt: authToken, // Usa jwt OU token, o que vier
         tipoUsuario: usuarioCompleto?.tipoUsuario?.toLowerCase() || 'mecanica',
       };
+
+      console.log('💾 [LOGIN] Salvando userData no sessionStorage:', userData);
 
       if (rememberMe) {
         localStorage.setItem('autofacil_rememberedEmail', email);
@@ -62,13 +87,17 @@ const Login = () => {
       }
 
       sessionStorage.setItem('autofacil_currentUser', JSON.stringify(userData));
+      console.log('✅ [LOGIN] Login bem-sucedido! Dados salvos.');
+      
       setLoginSuccess(true);
 
       setTimeout(() => {
+        console.log('🔄 [LOGIN] Redirecionando para dashboard...');
         navigate('/dashboard');
       }, 1500);
 
     } catch (err) {
+      console.error('❌ [LOGIN] Erro durante login:', err);
       const errorInfo = handleApiError(err);
       
       if (errorInfo.status === 401 || errorInfo.message.toLowerCase().includes('credenciais')) {
