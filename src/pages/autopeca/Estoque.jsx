@@ -42,27 +42,26 @@ const EstoquePage = () => {
       }
 
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('🏪 [ESTOQUE] Carregando produtos...');
-      console.log('🏪 [ESTOQUE] ID do lojista logado:', currentUser.id);
+      console.log(' [ESTOQUE] Carregando produtos...');
+      console.log(' [ESTOQUE] ID do lojista logado:', currentUser.id);
       
       const estoqueData = await produtoAPI.findAll();
-      console.log('📦 [ESTOQUE] Total de produtos retornados:', estoqueData.length);
+      console.log(' [ESTOQUE] Total de produtos retornados:', estoqueData.length);
       
       if (estoqueData.length > 0) {
-        console.log('📦 [ESTOQUE] Primeiro produto:', estoqueData[0]);
-        console.log('📦 [ESTOQUE] Chaves disponíveis:', Object.keys(estoqueData[0]));
+        console.log(' [ESTOQUE] Primeiro produto:', estoqueData[0]);
+        console.log(' [ESTOQUE] Chaves disponíveis:', Object.keys(estoqueData[0]));
       }
       
-      // ✅ BUG FIX 2: NÃO FILTRAR - Mostrar TODOS os produtos
-      // O backend DEVERIA filtrar, mas por enquanto mostramos todos
-      console.log('⚠️ [ESTOQUE] Mostrando TODOS os produtos (backend deveria filtrar)');
+      
+      console.log(' [ESTOQUE] Mostrando TODOS os produtos (backend deveria filtrar)');
       setProducts(estoqueData);
       setFilteredProducts(estoqueData);
-      console.log('✅ [ESTOQUE] Produtos carregados com sucesso');
+      console.log('[ESTOQUE] Produtos carregados com sucesso');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
     } catch (err) {
-      console.error('❌ [ESTOQUE] Erro ao carregar:', err);
+      console.error(' [ESTOQUE] Erro ao carregar:', err);
       const errorInfo = handleApiError(err);
       setError(errorInfo.message);
     } finally {
@@ -95,29 +94,27 @@ const EstoquePage = () => {
     }
   };
 
-  // ✅ BUG FIX 1: Corrigir preview da imagem
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     if (files && files[0]) {
       const file = files[0];
-      console.log(`📁 [ESTOQUE] Arquivo selecionado (${name}):`, file.name, file.type, file.size, 'bytes');
+      console.log(` [ESTOQUE] Arquivo selecionado (${name}):`, file.name, file.type, file.size, 'bytes');
       
       setFormValues(prev => ({ ...prev, [name]: file }));
       
-      // Preview da imagem - CORRIGIDO
       if (name === 'foto') {
         if (file.type.startsWith('image/')) {
           const reader = new FileReader();
           reader.onloadend = () => {
-            console.log('🖼️ [ESTOQUE] Preview gerado com sucesso');
+            console.log('[ESTOQUE] Preview gerado com sucesso');
             setPreviewFoto(reader.result);
           };
           reader.onerror = () => {
-            console.error('❌ [ESTOQUE] Erro ao gerar preview');
+            console.error('[ESTOQUE] Erro ao gerar preview');
           };
           reader.readAsDataURL(file);
         } else {
-          console.warn('⚠️ [ESTOQUE] Arquivo não é uma imagem:', file.type);
+          console.warn('[ESTOQUE] Arquivo não é uma imagem:', file.type);
           setPreviewFoto(null);
         }
       }
@@ -136,7 +133,6 @@ const EstoquePage = () => {
     if (!formValues.quantidadeEstoque) errors.quantidadeEstoque = 'Quantidade é obrigatória';
     else if (!/^\d+$/.test(formValues.quantidadeEstoque) || parseInt(formValues.quantidadeEstoque, 10) < 0) errors.quantidadeEstoque = 'Quantidade inválida';
     
-    // Validação de arquivos (apenas para criação)
     if (!isEditing) {
       if (!formValues.foto) errors.foto = 'Foto do produto é obrigatória';
       if (!formValues.documento) errors.documento = 'Documento é obrigatório';
@@ -212,11 +208,10 @@ const EstoquePage = () => {
           id_categoria: parseInt(formValues.idCategoria) || null
         };
         
-        console.log('📝 [ESTOQUE] Atualizando produto:', produtoParaAtualizar);
+        console.log('[ESTOQUE] Atualizando produto:', produtoParaAtualizar);
         const produtoAtualizado = await produtoAPI.update(produtoParaAtualizar);
-        console.log('✅ [ESTOQUE] Produto atualizado:', produtoAtualizado);
+        console.log('[ESTOQUE] Produto atualizado:', produtoAtualizado);
         
-        // ✅ BUG FIX 2: Atualizar estado imediatamente
         setProducts(prev => prev.map(p => p.id === currentProduct.id ? produtoAtualizado : p));
       } else {
         const userInfo = sessionStorage.getItem('autofacil_currentUser');
@@ -232,10 +227,10 @@ const EstoquePage = () => {
         };
         
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('📝 [ESTOQUE] Criando produto...');
-        console.log('📝 [ESTOQUE] Dados do produto:', produtoParaCriar);
-        console.log('📝 [ESTOQUE] Foto:', formValues.foto?.name, formValues.foto?.type);
-        console.log('📝 [ESTOQUE] Documento:', formValues.documento?.name, formValues.documento?.type);
+        console.log(' [ESTOQUE] Criando produto...');
+        console.log(' [ESTOQUE] Dados do produto:', produtoParaCriar);
+        console.log(' [ESTOQUE] Foto:', formValues.foto?.name, formValues.foto?.type);
+        console.log(' [ESTOQUE] Documento:', formValues.documento?.name, formValues.documento?.type);
         
         const novoProduto = await produtoAPI.create(
           produtoParaCriar, 
@@ -243,21 +238,21 @@ const EstoquePage = () => {
           formValues.documento
         );
         
-        console.log('✅ [ESTOQUE] Produto criado com sucesso:', novoProduto);
+        console.log(' [ESTOQUE] Produto criado com sucesso:', novoProduto);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         
-        // ✅ BUG FIX 2: Adicionar ao estado imediatamente
+        
         setProducts(prev => [novoProduto, ...prev]);
         
-        // ✅ Recarregar do backend para garantir persistência
+       
         await carregarEstoque();
       }
       closeModal();
     } catch (err) {
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('❌ [ESTOQUE] Erro ao salvar produto');
-      console.error('❌ [ESTOQUE] Detalhes:', err);
-      console.error('❌ [ESTOQUE] Response:', err.response?.data);
+      console.error(' [ESTOQUE] Erro ao salvar produto');
+      console.error(' [ESTOQUE] Detalhes:', err);
+      console.error(' [ESTOQUE] Response:', err.response?.data);
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       const errorInfo = handleApiError(err);
       setError(errorInfo.message);
@@ -270,17 +265,15 @@ const EstoquePage = () => {
     if (!window.confirm('Tem certeza que deseja excluir este produto?')) return;
     setError(null);
     try {
-      console.log('🗑️ [ESTOQUE] Deletando produto ID:', id);
+      console.log(' [ESTOQUE] Deletando produto ID:', id);
       await produtoAPI.delete(id);
-      console.log('✅ [ESTOQUE] Produto deletado com sucesso');
+      console.log(' [ESTOQUE] Produto deletado com sucesso');
       
-      // ✅ BUG FIX 2: Remover do estado imediatamente
       setProducts(prev => prev.filter(p => p.id !== id));
       
-      // Recarregar para confirmar
       await carregarEstoque();
     } catch (err) {
-      console.error('❌ [ESTOQUE] Erro ao deletar:', err);
+      console.error('[ESTOQUE] Erro ao deletar:', err);
       const errorInfo = handleApiError(err);
       setError(errorInfo.message);
       alert(`Erro ao deletar: ${errorInfo.message}`);
@@ -383,7 +376,7 @@ const EstoquePage = () => {
             <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
               {error && ( <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex items-center text-sm"><AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />{error}</div> )}
               
-              {/* ✅ BUG FIX 1: Preview corrigido */}
+              
               {!isEditing && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

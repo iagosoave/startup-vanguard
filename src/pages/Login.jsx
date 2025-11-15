@@ -15,7 +15,7 @@ const Login = () => {
   useEffect(() => {
     const currentUserJson = sessionStorage.getItem('autofacil_currentUser');
     if (currentUserJson) {
-      console.log('👤 [LOGIN] Usuário já logado, redirecionando...');
+      console.log(' [LOGIN] Usuário já logado, redirecionando...');
       navigate('/dashboard');
     }
     const savedEmail = localStorage.getItem('autofacil_rememberedEmail');
@@ -34,70 +34,146 @@ const Login = () => {
       return;
     }
 
-    console.log('🚀 [LOGIN] Iniciando processo de login...');
-    console.log('📧 [LOGIN] Email:', email);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(' [LOGIN] Iniciando processo de login...');
+    console.log(' [LOGIN] Email:', email);
     setIsLoading(true);
 
     try {
       const loginResponse = await authAPI.login(email, password);
       
-      console.log('🔥 [LOGIN] RESPONSE COMPLETO DO BACKEND:', loginResponse);
-      console.log('🔍 [LOGIN] Estrutura do response:', {
-        temJWT: !!loginResponse.jwt,
-        temToken: !!loginResponse.token,
-        temUsuario: !!loginResponse.usuario,
-        temUser: !!loginResponse.user,
-        todasAsChaves: Object.keys(loginResponse)
-      });
+      console.log('[LOGIN] Response do backend:', loginResponse);
+      console.log('[LOGIN] Chaves do response:', Object.keys(loginResponse));
       
       const authToken = loginResponse.jwt || loginResponse.token;
       
       if (!authToken) {
-        console.error('❌ [LOGIN] Nem JWT nem token encontrados no response!');
-        setError('Resposta inválida do servidor - sem token de autenticação');
+        console.error('[LOGIN] Token não encontrado no response!');
+        setError('Resposta inválida do servidor - sem token');
         setIsLoading(false);
         return;
       }
 
-      console.log('✅ [LOGIN] Token encontrado:', authToken.substring(0, 50) + '...');
+      console.log(' [LOGIN] Token recebido:', authToken.substring(0, 50) + '...');
 
-      const usuarioCompleto = loginResponse.usuario || loginResponse.user;
-      
-      if (!usuarioCompleto) {
-        console.warn('⚠️ [LOGIN] Dados do usuário não encontrados no response');
-      } else {
-        console.log('👤 [LOGIN] Dados do usuário:', usuarioCompleto);
+      try {
+        const base64Url = authToken.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        
+        const jwtData = JSON.parse(jsonPayload);
+        const emailFromJwt = jwtData.sub;
+        
+        console.log(' [LOGIN] Email extraído do JWT:', emailFromJwt);
+        console.log(' [LOGIN] Payload completo do JWT:', jwtData);
+
+        const tempUserData = {
+          email: emailFromJwt,
+          jwt: authToken,
+        };
+        sessionStorage.setItem('autofacil_currentUser', JSON.stringify(tempUserData));
+        console.log('[LOGIN] JWT temporário salvo no sessionStorage');
+
+        console.log('[LOGIN] Buscando dados completos do usuário...');
+        
+        const todosUsuarios = await usuarioAPI.getAll();
+        console.log(' [LOGIN] Total de usuários retornados:', todosUsuarios.length);
+        
+        if (todosUsuarios.length > 0) {
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log(' [LOGIN DEBUG] PRIMEIRO USUÁRIO (exemplo):');
+          console.log(JSON.stringify(todosUsuarios[0], null, 2));
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log(' [LOGIN DEBUG] CHAVES DO PRIMEIRO USUÁRIO:', Object.keys(todosUsuarios[0]));
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        }
+        
+        const usuarioCompleto = todosUsuarios.find(u => 
+          u.email?.toLowerCase() === emailFromJwt.toLowerCase()
+        );
+        
+        if (!usuarioCompleto) {
+          console.error(' [LOGIN] Usuário não encontrado na lista de usuários!');
+          console.error(' [LOGIN] Email procurado:', emailFromJwt);
+          console.error(' [LOGIN] Emails disponíveis:', todosUsuarios.map(u => u.email));
+          throw new Error('Dados do usuário não encontrados. Tente novamente.');
+        }
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(' [LOGIN] Usuário completo encontrado:');
+        console.log(JSON.stringify(usuarioCompleto, null, 2));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(' [LOGIN] ID:', usuarioCompleto.id);
+        console.log(' [LOGIN] Nome:', usuarioCompleto.nomeCompleto);
+        console.log(' [LOGIN] Email:', usuarioCompleto.email);
+        console.log(' [LOGIN] Tipo (tipoUsuario):', usuarioCompleto.tipoUsuario);
+        console.log(' [LOGIN] Tipo (tipo_usuario):', usuarioCompleto.tipo_usuario);
+        console.log(' [LOGIN] Tipo (tipo):', usuarioCompleto.tipo);
+        console.log(' [LOGIN] Tipo (perfil):', usuarioCompleto.perfil);
+        console.log(' [LOGIN] Tipo (role):', usuarioCompleto.role);
+        console.log(' [LOGIN] TODAS AS CHAVES:', Object.keys(usuarioCompleto));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+        const tipoUsuarioFinal = usuarioCompleto.tipoUsuario || 
+                                 usuarioCompleto.tipo_usuario || 
+                                 usuarioCompleto.tipo || 
+                                 usuarioCompleto.perfil ||
+                                 usuarioCompleto.role ||
+                                 'COMPRADOR';
+
+        const userData = {
+          id: usuarioCompleto.id,
+          nome: usuarioCompleto.nomeCompleto || usuarioCompleto.nome || emailFromJwt,
+          email: emailFromJwt,
+          jwt: authToken,
+          tipoUsuario: tipoUsuarioFinal,
+        };
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(' [LOGIN] Dados finais para salvar:');
+        console.log(JSON.stringify(userData, null, 2));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(' [LOGIN] ID do usuário:', userData.id);
+        console.log(' [LOGIN] Tipo de usuário FINAL:', userData.tipoUsuario);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+        if (rememberMe) {
+          localStorage.setItem('autofacil_rememberedEmail', email);
+        } else {
+          localStorage.removeItem('autofacil_rememberedEmail');
+        }
+
+        sessionStorage.setItem('autofacil_currentUser', JSON.stringify(userData));
+        
+        console.log(' [LOGIN] Dados completos salvos no sessionStorage');
+        console.log(' [LOGIN] Login bem-sucedido!');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        setLoginSuccess(true);
+
+        setTimeout(() => {
+          console.log(' [LOGIN] Redirecionando para dashboard...');
+          navigate('/dashboard', { replace: true });
+        }, 1500);
+
+      } catch (decodeErr) {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error(' [LOGIN] Erro ao processar dados:', decodeErr);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        setError('Erro ao processar dados do usuário. Tente novamente.');
+        sessionStorage.removeItem('autofacil_currentUser');
       }
-      
-      const userData = {
-        id: usuarioCompleto?.id,
-        nome: usuarioCompleto?.nomeCompleto || usuarioCompleto?.nome,
-        email: email,
-        jwt: authToken,
-        tipoUsuario: usuarioCompleto?.tipoUsuario || 'COMPRADOR',
-      };
-
-      console.log('💾 [LOGIN] Salvando userData no sessionStorage:', userData);
-      console.log('🎯 [LOGIN] Tipo de usuário:', userData.tipoUsuario);
-
-      if (rememberMe) {
-        localStorage.setItem('autofacil_rememberedEmail', email);
-      } else {
-        localStorage.removeItem('autofacil_rememberedEmail');
-      }
-
-      sessionStorage.setItem('autofacil_currentUser', JSON.stringify(userData));
-      console.log('✅ [LOGIN] Login bem-sucedido! Dados salvos.');
-      
-      setLoginSuccess(true);
-
-      setTimeout(() => {
-        console.log('🔄 [LOGIN] Redirecionando para dashboard...');
-        navigate('/dashboard');
-      }, 1500);
 
     } catch (err) {
-      console.error('❌ [LOGIN] Erro durante login:', err);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error(' [LOGIN] Erro durante login:', err);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
       const errorInfo = handleApiError(err);
       
       if (errorInfo.status === 401 || errorInfo.message.toLowerCase().includes('credenciais')) {
@@ -107,6 +183,8 @@ const Login = () => {
       } else {
         setError(errorInfo.message || 'Erro ao fazer login. Tente novamente.');
       }
+      
+      sessionStorage.removeItem('autofacil_currentUser');
     } finally {
       setIsLoading(false);
     }

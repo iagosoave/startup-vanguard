@@ -2,38 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DollarSign, ShoppingCart, Package, Users, Loader2 } from 'lucide-react';
 
-// ===================================================
-// INÍCIO - LÓGICA DE API DO BACKEND (COMENTADO)
-// ===================================================
-// const fetchDashboardData = async () => {
-//   try {
-//     const response = await fetch('URL_DA_SUA_API/dashboard/autopeca'); // Rota para dados do dashboard
-//     if (!response.ok) {
-//       throw new Error('Erro ao buscar dados do dashboard');
-//     }
-//     const data = await response.json();
-//     // A API deve retornar um objeto com os dados necessários:
-//     // {
-//     //   faturamentoMensal: 15000,
-//     //   pedidosPendentes: 12,
-//     //   produtosEstoque: 350,
-//     //   novosClientes: 5,
-//     //   vendasPorMes: [
-//     //     { mes: 'Jan', Vendas: 4000 }, { mes: 'Fev', Vendas: 3000 }, ...
-//     //   ]
-//     // }
-//     return data;
-//   } catch (error) {
-//     console.error("API Error (fetchDashboardData):", error);
-//     throw error;
-//   }
-// };
-// ===================================================
-// FIM - LÓGICA DE API DO BACKEND
-// ===================================================
 
-
-// Componente de Card Estatístico reutilizável
 const StatCard = ({ title, value, icon: Icon, loading }) => (
   <div className="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4">
     <div className="p-3 bg-red-100 rounded-full">
@@ -52,15 +21,15 @@ const StatCard = ({ title, value, icon: Icon, loading }) => (
 
 
 const AutopecaDashboard = () => {
-  // Estado para controlar o carregamento dos dados
+  
   const [isLoading, setIsLoading] = useState(true); 
-  // Estados para armazenar dados (inicializados como nulos ou placeholders)
+  
   const [dashboardData, setDashboardData] = useState({
       faturamentoMensal: null,
       pedidosPendentes: null,
       produtosEstoque: null,
       novosClientes: null,
-      vendasPorMes: [] // Gráfico começa vazio
+      vendasPorMes: [] 
   });
   const [error, setError] = useState(null);
 
@@ -70,26 +39,26 @@ const AutopecaDashboard = () => {
       setIsLoading(true);
       setError(null);
       try {
-        // const data = await fetchDashboardData(); // CHAMADA API REAL
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simula delay API
         
-        // **NÃO DEFINIR DADOS REAIS** - Mantenha os placeholders ou defina como zero/vazio
+        await new Promise(resolve => setTimeout(resolve, 1500)); 
+        
+        
         const mockDataVazia = {
-             faturamentoMensal: null, // Ou 0
-             pedidosPendentes: null, // Ou 0
-             produtosEstoque: null, // Ou 0
-             novosClientes: null, // Ou 0
-             // Deixe o gráfico vazio ou com dados zerados se preferir
+             faturamentoMensal: null, 
+             pedidosPendentes: null, 
+             produtosEstoque: null, 
+             novosClientes: null, 
+             
              vendasPorMes: [ 
                  { mes: 'Jan', Vendas: 0 }, { mes: 'Fev', Vendas: 0 }, { mes: 'Mar', Vendas: 0 },
                  { mes: 'Abr', Vendas: 0 }, { mes: 'Mai', Vendas: 0 }, { mes: 'Jun', Vendas: 0 }
              ]
          };
-         setDashboardData(mockDataVazia); // Define dados vazios/placeholders
+         setDashboardData(mockDataVazia); 
 
       } catch (err) {
         setError(err.message || 'Falha ao carregar dados do dashboard.');
-        // Define placeholders de erro ou mantém nulo
+        
          setDashboardData({
              faturamentoMensal: 'Erro',
              pedidosPendentes: 'Erro',
@@ -98,15 +67,13 @@ const AutopecaDashboard = () => {
              vendasPorMes: []
          });
       } finally {
-        // Defina isLoading como false *depois* de um tempo para mostrar os placeholders
-        // Se quiser mostrar o loading até a API responder (mesmo que vazia), remova o timeout
-         // setTimeout(() => setIsLoading(false), 500); // Pequeno delay para mostrar loading
-         setIsLoading(false); // Remove loading imediatamente após simulação
+        
+         setIsLoading(false); 
       }
     };
 
     carregarDados();
-  }, []); // Roda apenas uma vez
+  }, []); 
 
   const formatCurrency = (value) => {
     if (value === null || value === undefined || value === 'Erro') return '---'; // Placeholder
@@ -114,7 +81,7 @@ const AutopecaDashboard = () => {
   };
   
   const formatNumber = (value) => {
-      if (value === null || value === undefined || value === 'Erro') return '---'; // Placeholder
+      if (value === null || value === undefined || value === 'Erro') return '---'; 
       return value.toString();
   }
 
@@ -122,7 +89,6 @@ const AutopecaDashboard = () => {
     <div className="container mx-auto p-4 md:p-6 space-y-8">
       <h1 className="text-2xl font-bold text-gray-800">Dashboard da Autopeça</h1>
 
-      {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Faturamento Mensal" 
@@ -164,7 +130,7 @@ const AutopecaDashboard = () => {
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
-              data={dashboardData.vendasPorMes} // Usará os dados zerados ou vazios
+              data={dashboardData.vendasPorMes} 
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
@@ -178,8 +144,7 @@ const AutopecaDashboard = () => {
         )}
       </div>
 
-       {/* Futuras seções podem ser adicionadas aqui */}
-       {/* Ex: Lista de produtos com baixo estoque, últimos pedidos, etc. */}
+ 
 
     </div>
   );

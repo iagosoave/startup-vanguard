@@ -25,7 +25,6 @@ const Cadastro = () => {
   const [cadastroSuccess, setCadastroSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showEndereco, setShowEndereco] = useState(false);
 
   const LIMITS = {
     nomeEmpresa: 100,
@@ -58,6 +57,21 @@ const Cadastro = () => {
   const validatePhone = (phone) => {
     const numbers = phone.replace(/\D/g, '');
     return numbers.length >= 10 && numbers.length <= 11;
+  };
+
+  const validatePassword = (password) => {
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const hasMinLength = password.length >= 8;
+    
+    return {
+      isValid: hasUpperCase && hasNumber && hasSpecialChar && hasMinLength,
+      hasUpperCase,
+      hasNumber,
+      hasSpecialChar,
+      hasMinLength
+    };
   };
 
   const handleChange = (e) => {
@@ -95,19 +109,29 @@ const Cadastro = () => {
     if (!formData.telefone.trim()) newErrors.telefone = "Telefone é obrigatório";
     else if (!validatePhone(formData.telefone)) newErrors.telefone = "Telefone inválido ((XX) XXXXX-XXXX)";
     
-    if (!formData.password) newErrors.password = "Senha é obrigatória";
-    else if (formData.password.length < 6) newErrors.password = "Senha deve ter pelo menos 6 caracteres";
+    if (!formData.password) {
+      newErrors.password = "Senha é obrigatória";
+    } else {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        const missing = [];
+        if (!passwordValidation.hasMinLength) missing.push("mínimo 8 caracteres");
+        if (!passwordValidation.hasUpperCase) missing.push("letra maiúscula");
+        if (!passwordValidation.hasNumber) missing.push("número");
+        if (!passwordValidation.hasSpecialChar) missing.push("caractere especial");
+        newErrors.password = `Senha deve conter: ${missing.join(", ")}`;
+      }
+    }
     
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "As senhas não coincidem";
     
-    if (showEndereco) {
-      if (!formData.cep.trim()) newErrors.cep = "CEP é obrigatório";
-      if (!formData.rua.trim()) newErrors.rua = "Rua é obrigatória";
-      if (!formData.numero.trim()) newErrors.numero = "Número é obrigatório";
-      if (!formData.bairro.trim()) newErrors.bairro = "Bairro é obrigatório";
-      if (!formData.cidade.trim()) newErrors.cidade = "Cidade é obrigatória";
-      if (!formData.estado.trim()) newErrors.estado = "Estado é obrigatório";
-    }
+    // ✅ ENDEREÇO OBRIGATÓRIO
+    if (!formData.cep.trim()) newErrors.cep = "CEP é obrigatório";
+    if (!formData.rua.trim()) newErrors.rua = "Rua é obrigatória";
+    if (!formData.numero.trim()) newErrors.numero = "Número é obrigatório";
+    if (!formData.bairro.trim()) newErrors.bairro = "Bairro é obrigatório";
+    if (!formData.cidade.trim()) newErrors.cidade = "Cidade é obrigatória";
+    if (!formData.estado.trim()) newErrors.estado = "Estado é obrigatório";
     
     return newErrors;
   };
@@ -123,7 +147,7 @@ const Cadastro = () => {
     setErrors({});
     
     try {
-      const endereco = showEndereco ? {
+      const endereco = {
         rua: formData.rua,
         numero: formData.numero,
         complemento: formData.complemento || null,
@@ -131,7 +155,7 @@ const Cadastro = () => {
         cidade: formData.cidade,
         estado: formData.estado,
         cep: formData.cep.replace(/\D/g, '')
-      } : null;
+      };
 
       const usuarioData = {
         email: formData.email,
@@ -144,18 +168,8 @@ const Cadastro = () => {
         endereco: endereco
       };
 
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📤 [CADASTRO] Dados que serão enviados:');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log(JSON.stringify(usuarioData, null, 2));
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
       const usuarioCriado = await usuarioAPI.create(usuarioData);
-      console.log('✅ [CADASTRO] Resposta do servidor:', usuarioCriado);
-      
-      console.log('🔐 [CADASTRO] Tentando login automático...');
       const loginResponse = await authAPI.login(formData.email, formData.password);
-      console.log('✅ [CADASTRO] Login realizado:', loginResponse);
       
       const userData = {
         id: usuarioCriado.id,
@@ -166,28 +180,13 @@ const Cadastro = () => {
       };
       
       sessionStorage.setItem('autofacil_currentUser', JSON.stringify(userData));
-      console.log('💾 [CADASTRO] Dados salvos no sessionStorage:', userData);
-      console.log('🎯 [CADASTRO] Tipo de usuário:', formData.tipoUsuario);
-      
       setCadastroSuccess(true);
       
       setTimeout(() => {
-        console.log('🚀 [CADASTRO] Redirecionando para dashboard...');
         navigate('/dashboard');
       }, 2000);
       
     } catch (err) {
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('❌ [CADASTRO] ERRO CAPTURADO');
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('📋 Status:', err.response?.status);
-      console.error('📋 Data completa:', err.response?.data);
-      console.error('📋 Message:', err.response?.data?.message);
-      console.error('📋 Error:', err.response?.data?.error);
-      console.error('📋 Details:', err.response?.data?.details);
-      console.error('📋 Trace:', err.response?.data?.trace);
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      
       const errorInfo = handleApiError(err);
       
       if (errorInfo.message.toLowerCase().includes('email')) {
@@ -243,7 +242,7 @@ const Cadastro = () => {
           </div>
           
           <div>
-            <label htmlFor="nomeEmpresa" className="block text-sm font-medium text-gray-700 mb-1">Nome Completo / Empresa</label>
+            <label htmlFor="nomeEmpresa" className="block text-sm font-medium text-gray-700 mb-1">Nome Completo / Empresa *</label>
             <div className="relative">
               <input id="nomeEmpresa" name="nomeEmpresa" type="text" required value={formData.nomeEmpresa} onChange={handleChange} maxLength={LIMITS.nomeEmpresa} className={`w-full px-4 py-3 border ${errors.nomeEmpresa ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="Seu nome ou nome da empresa"/>
               <div className="text-xs text-gray-500 mt-1 text-right">{formData.nomeEmpresa.length}/{LIMITS.nomeEmpresa}</div>
@@ -252,13 +251,13 @@ const Cadastro = () => {
           </div>
           
           <div>
-            <label htmlFor="cnpj" className="block text-sm font-medium text-gray-700 mb-1">CNPJ / CPF</label>
+            <label htmlFor="cnpj" className="block text-sm font-medium text-gray-700 mb-1">CNPJ / CPF *</label>
             <input id="cnpj" name="cnpj" type="text" required value={formData.cnpj} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.cnpj ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="XX.XXX.XXX/XXXX-XX" maxLength="18"/>
             {errors.cnpj && <p className="text-red-500 text-xs mt-1">{errors.cnpj}</p>}
           </div>
           
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
             <div className="relative">
               <input id="email" name="email" type="email" required value={formData.email} onChange={handleChange} maxLength={LIMITS.email} className={`w-full px-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="seu@email.com"/>
               <div className="text-xs text-gray-500 mt-1 text-right">{formData.email.length}/{LIMITS.email}</div>
@@ -267,13 +266,16 @@ const Cadastro = () => {
           </div>
           
           <div>
-            <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+            <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 mb-1">Telefone *</label>
             <input id="telefone" name="telefone" type="tel" required value={formData.telefone} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.telefone ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="(XX) XXXXX-XXXX"/>
             {errors.telefone && <p className="text-red-500 text-xs mt-1">{errors.telefone}</p>}
           </div>
           
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Senha *
+              <span className="text-xs text-gray-500 font-normal ml-2">(Mín. 8 caracteres, 1 maiúscula, 1 número e 1 especial)</span>
+            </label>
             <div className="relative">
               <input id="password" name="password" type={showPassword ? "text" : "password"} required value={formData.password} onChange={handleChange} className={`w-full px-4 py-3 pr-12 border ${errors.password ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="••••••••"/>
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700">
@@ -284,7 +286,7 @@ const Cadastro = () => {
           </div>
           
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha *</label>
             <div className="relative">
               <input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"} required value={formData.confirmPassword} onChange={handleChange} className={`w-full px-4 py-3 pr-12 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="••••••••"/>
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700">
@@ -294,55 +296,47 @@ const Cadastro = () => {
             {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
           </div>
 
-          <div className="border-t pt-4">
-            <button
-              type="button"
-              onClick={() => setShowEndereco(!showEndereco)}
-              className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center">
-              {showEndereco ? '− Remover endereço' : '+ Adicionar endereço (opcional)'}
-            </button>
-          </div>
-
-          {showEndereco && (
-            <div className="space-y-4 border p-4 rounded bg-gray-50">
-              <h3 className="font-medium text-gray-700">Endereço</h3>
-              
+          {/* ✅ ENDEREÇO OBRIGATÓRIO */}
+          <div className="border-t pt-6 mt-6">
+            <h3 className="font-medium text-gray-900 mb-4">Endereço *</h3>
+            
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="cep" className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
-                  <input id="cep" name="cep" type="text" value={formData.cep} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.cep ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="XXXXX-XXX" maxLength="9"/>
+                  <label htmlFor="cep" className="block text-sm font-medium text-gray-700 mb-1">CEP *</label>
+                  <input id="cep" name="cep" type="text" required value={formData.cep} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.cep ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="XXXXX-XXX" maxLength="9"/>
                   {errors.cep && <p className="text-red-500 text-xs mt-1">{errors.cep}</p>}
                 </div>
                 
                 <div>
-                  <label htmlFor="estado" className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                  <input id="estado" name="estado" type="text" value={formData.estado} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.estado ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="SP" maxLength="2"/>
+                  <label htmlFor="estado" className="block text-sm font-medium text-gray-700 mb-1">Estado *</label>
+                  <input id="estado" name="estado" type="text" required value={formData.estado} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.estado ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="SP" maxLength="2"/>
                   {errors.estado && <p className="text-red-500 text-xs mt-1">{errors.estado}</p>}
                 </div>
               </div>
               
               <div>
-                <label htmlFor="cidade" className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
-                <input id="cidade" name="cidade" type="text" value={formData.cidade} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.cidade ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="São Paulo"/>
+                <label htmlFor="cidade" className="block text-sm font-medium text-gray-700 mb-1">Cidade *</label>
+                <input id="cidade" name="cidade" type="text" required value={formData.cidade} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.cidade ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="São Paulo"/>
                 {errors.cidade && <p className="text-red-500 text-xs mt-1">{errors.cidade}</p>}
               </div>
               
               <div>
-                <label htmlFor="bairro" className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
-                <input id="bairro" name="bairro" type="text" value={formData.bairro} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.bairro ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="Centro"/>
+                <label htmlFor="bairro" className="block text-sm font-medium text-gray-700 mb-1">Bairro *</label>
+                <input id="bairro" name="bairro" type="text" required value={formData.bairro} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.bairro ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="Centro"/>
                 {errors.bairro && <p className="text-red-500 text-xs mt-1">{errors.bairro}</p>}
               </div>
               
               <div>
-                <label htmlFor="rua" className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
-                <input id="rua" name="rua" type="text" value={formData.rua} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.rua ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="Rua das Flores"/>
+                <label htmlFor="rua" className="block text-sm font-medium text-gray-700 mb-1">Rua *</label>
+                <input id="rua" name="rua" type="text" required value={formData.rua} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.rua ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="Rua das Flores"/>
                 {errors.rua && <p className="text-red-500 text-xs mt-1">{errors.rua}</p>}
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="numero" className="block text-sm font-medium text-gray-700 mb-1">Número</label>
-                  <input id="numero" name="numero" type="text" value={formData.numero} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.numero ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="123"/>
+                  <label htmlFor="numero" className="block text-sm font-medium text-gray-700 mb-1">Número *</label>
+                  <input id="numero" name="numero" type="text" required value={formData.numero} onChange={handleChange} className={`w-full px-4 py-3 border ${errors.numero ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600`} placeholder="123"/>
                   {errors.numero && <p className="text-red-500 text-xs mt-1">{errors.numero}</p>}
                 </div>
                 
@@ -352,7 +346,7 @@ const Cadastro = () => {
                 </div>
               </div>
             </div>
-          )}
+          </div>
           
           <div className="flex items-center">
             <input id="termos" name="termos" type="checkbox" required className="h-4 w-4 text-red-600 focus:ring-red-600 border-gray-300 rounded"/>
@@ -371,7 +365,7 @@ const Cadastro = () => {
             </button>
           </div>
           
-          {cadastroSuccess && (<div className="mt-4 p-3 bg-green-100 text-green-800 rounded">✅ Cadastro realizado com sucesso! Redirecionando...</div>)}
+          {cadastroSuccess && (<div className="mt-4 p-3 bg-green-100 text-green-800 rounded">Cadastro realizado com sucesso! Redirecionando...</div>)}
         </form>
         
         <div className="mt-8 text-center"><p className="text-gray-600">Já tem uma conta? <Link to="/login" className="text-red-600 hover:text-red-700 font-medium">Entrar</Link></p></div>
