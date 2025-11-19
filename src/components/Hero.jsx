@@ -223,9 +223,7 @@ const Hero = () => {
       >
         <div className="flex items-center justify-center">
           <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
-          <p className="text-xs uppercase tracking-wider text-gray-400 mx-4">
-            motoBot
-          </p>
+         
           <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
         </div>
       </motion.div>

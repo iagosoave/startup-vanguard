@@ -36,7 +36,7 @@ const TeamSection = () => {
     },
     {
       name: "João Eduardo",
-      roles: ["Consultor de Usabilidade", "Desenvolvedor Front-end", "Engenheiro de Testes"],
+      roles: ["Consultor de Usabilidade", "Desenvolvedor Mobile", "Engenheiro de Testes"],
       image: Joao
     }
   ];
@@ -107,9 +107,7 @@ const TeamSection = () => {
       <div className="absolute bottom-4 left-0 w-full text-center z-20">
         <div className="flex items-center justify-center">
           <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
-          <p className="text-xs uppercase tracking-wider text-gray-400 mx-4">
-            Desenvolvido com dedicação
-          </p>
+         
           <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
         </div>
       </div>

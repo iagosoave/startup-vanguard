@@ -2,6 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SendHorizonal, Bot, User, ShoppingCart, Loader2, X } from 'lucide-react';
 import { produtoAPI, carrinhoAPI, pedidoAPI, handleApiError } from '../../services/api';
 
+// ✅ Usar variáveis de ambiente para configurações sensíveis
+const CHATBOT_API = import.meta.env.VITE_CHATBOT_API_URL || 'https://chat-bot-vanguard.onrender.com';
+const CHATBOT_TOKEN = import.meta.env.VITE_CHATBOT_TOKEN;
+
+// Validar se o token está configurado
+if (!CHATBOT_TOKEN) {
+  console.error('❌ [CHATBOT] Token não configurado! Adicione VITE_CHATBOT_TOKEN no arquivo .env');
+}
+
+console.log('🔧 [CHATBOT CONFIG] API URL:', CHATBOT_API);
+console.log('🔧 [CHATBOT CONFIG] Token configurado:', !!CHATBOT_TOKEN);
+
 const ChatbotPedidos = () => {
   const [mensagens, setMensagens] = useState([]);
   const [inputUsuario, setInputUsuario] = useState('');
@@ -23,7 +35,6 @@ const ChatbotPedidos = () => {
   });
 
   const messagesEndRef = useRef(null);
-  const CHATBOT_API = 'https://chat-bot-vanguard.onrender.com';
 
   const getCurrentUser = () => {
     try {
@@ -96,6 +107,12 @@ const ChatbotPedidos = () => {
     const input = inputUsuario.trim();
     if (!input || buscandoProdutos || processandoCheckout) return;
 
+    // ✅ Verificar se o token está configurado antes de fazer a requisição
+    if (!CHATBOT_TOKEN) {
+      adicionarMensagemBot("⚠️ Sistema de chatbot não configurado. Entre em contato com o suporte.");
+      return;
+    }
+
     adicionarMensagemUsuario(input);
     setInputUsuario('');
     const inputLower = input.toLowerCase();
@@ -131,7 +148,7 @@ const ChatbotPedidos = () => {
         },
         body: JSON.stringify({
           mensagem: input,
-          token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0ZUAxMi5jb20iLCJpYXQiOjE3NjI5NzU1MzAsImV4cCI6MTc2MzAxMTUzMH0.d3dvm19nj5b09q5P5XMQFAPT0rXGLHwlIU_sEdyB39o"
+          token: CHATBOT_TOKEN // ✅ Usar token do .env
         })
       });
 

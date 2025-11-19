@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://prj-startup-java.onrender.com';
+// ✅ Usar variável de ambiente para a URL da API
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://prj-startup-java.onrender.com';
+
+console.log('🔧 [API CONFIG] URL Base:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
