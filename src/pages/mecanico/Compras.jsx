@@ -29,16 +29,47 @@ const ComprasPage = () => {
       
       console.log('📦 [COMPRAS] Usuário atual:', { userId, user: currentUser });
       
+      // 1. Verificar se o ID do usuário está presente
+      if (!userId) {
+        throw new Error('ID do usuário não encontrado. Por favor, faça login novamente.');
+      }
+
       const todosPedidos = await pedidoAPI.getAll();
       console.log('📦 [COMPRAS] Todos os pedidos:', todosPedidos);
       
-      // Filtrar pedidos do usuário atual
+      // 2. Converter o ID do usuário atual para string para comparação segura
+      const userIdString = String(userId);
+      
+      // 3. Filtrar pedidos
       const comprasData = todosPedidos.filter(p => {
-        // Tentar várias propriedades possíveis para o ID do usuário
-        const pedidoUserId = p.usuarioId || p.idComprador || p.userId || p.user_id || p.idUsuario;
-        return pedidoUserId === userId;
+        // Tentar várias propriedades possíveis para o ID do usuário e converter para string
+        const rawPedidoUserId = p.usuarioId || p.idComprador || p.userId || p.user_id || p.idUsuario 
+                                || p.comprador?.id || p.usuario?.id || p.cliente?.id || '';
+
+        const pedidoUserId = String(rawPedidoUserId);
+        
+        return pedidoUserId === userIdString;
       });
       
+      // 4. LÓGICA DE DEBUG: Se não houver resultados, loga o primeiro pedido completo
+      if (comprasData.length === 0 && todosPedidos.length > 0) {
+          console.warn(`⚠️ [COMPRAS - DEBUG] Nenhum pedido encontrado para o usuário ID: ${userIdString}.`);
+          
+          const debugPedidos = todosPedidos.slice(0, 3);
+          
+          const foundIds = debugPedidos
+              .map(p => {
+                  return p.usuarioId || p.idComprador || p.userId || p.user_id || p.idUsuario 
+                        || p.comprador?.id || p.usuario?.id || p.cliente?.id;
+              })
+              .filter(id => id !== undefined && id !== null);
+
+          console.warn(`⚠️ [COMPRAS - DEBUG] IDs de comprador nos pedidos VISTOS: ${JSON.stringify(foundIds)}`);
+          console.warn('⚠️ [COMPRAS - DEBUG] PRIMEIRO PEDIDO RECEBIDO (Para inspecionar a estrutura):');
+          console.log(debugPedidos[0]); 
+          console.warn('⚠️ [COMPRAS - DEBUG] Analise o objeto acima para verificar os campos de ID, Total e Fornecedor.');
+      }
+
       console.log('📦 [COMPRAS] Pedidos filtrados do usuário:', comprasData);
       
       // Ordenar por data (mais recentes primeiro)
@@ -51,7 +82,10 @@ const ComprasPage = () => {
       setCompras(comprasOrdenadas);
     } catch (err) {
       console.error('❌ [COMPRAS] Erro ao carregar:', err);
-      const errorInfo = handleApiError(err);
+      // Se o erro for a falta de ID, exibe a mensagem direta
+      const errorInfo = (err.message && err.message.includes('ID do usuário')) 
+                        ? { message: err.message } 
+                        : handleApiError(err);
       setError(errorInfo.message);
     } finally {
       setIsLoading(false);
@@ -80,19 +114,18 @@ const ComprasPage = () => {
   const getStatusColor = (status) => {
     const statusNormalized = (status || '').toLowerCase();
     
-    if (statusNormalized.includes('pendente')) return 'bg-yellow-100 text-yellow-800';
+    if (statusNormalized.includes('pendente') || statusNormalized.includes('pending')) return 'bg-yellow-100 text-yellow-800';
     if (statusNormalized.includes('processamento') || statusNormalized.includes('processando')) return 'bg-blue-100 text-blue-800';
     if (statusNormalized.includes('enviado') || statusNormalized.includes('transporte')) return 'bg-purple-100 text-purple-800';
-    if (statusNormalized.includes('entregue') || statusNormalized.includes('concluído') || statusNormalized.includes('concluido')) return 'bg-green-100 text-green-800';
-    if (statusNormalized.includes('cancelado')) return 'bg-red-100 text-red-800';
+    if (statusNormalized.includes('entregue') || statusNormalized.includes('aprovado') || statusNormalized.includes('approved') || statusNormalized.includes('concluido')) return 'bg-green-100 text-green-800';
+    if (statusNormalized.includes('cancelado') || statusNormalized.includes('rejected')) return 'bg-red-100 text-red-800';
     
     return 'bg-gray-100 text-gray-800';
   };
 
   const formatarValor = (valor) => {
-    if (!valor) return '0,00';
+    if (valor === undefined || valor === null) return '0,00';
     
-    // Se já for número
     if (typeof valor === 'number') {
       return valor.toLocaleString('pt-BR', { 
         minimumFractionDigits: 2, 
@@ -100,7 +133,6 @@ const ComprasPage = () => {
       });
     }
     
-    // Se for string, converter
     const valorNum = parseFloat(valor);
     if (!isNaN(valorNum)) {
       return valorNum.toLocaleString('pt-BR', { 
@@ -154,6 +186,7 @@ const ComprasPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Pedido</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fornecedor</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
               </tr>
             </thead>
@@ -161,8 +194,18 @@ const ComprasPage = () => {
               {compras.length > 0 ? (
                 compras.map(compra => {
                   const dataCompra = compra.dataCompra || compra.dataPedido || compra.createdAt || compra.created_at;
-                  const valorTotal = compra.valorTotal || compra.valor_total || compra.total || 0;
-                  const pedidoId = compra.id || compra.idPedido || compra.pedidoId || '?';
+                  
+                  // ✅ CORREÇÃO DO TOTAL: Adiciona checagens de campos aninhados ou alternativos
+                  const valorTotal = compra.valorTotal || compra.valor_total || compra.total 
+                                     || compra.valor || compra.valor_final 
+                                     || compra.pedido?.valorTotal || compra.pedido?.valor || 0;
+                                     
+                  const pedidoId = compra.id || compra.idPedido || compra.pedidoId || compra.pedido?.id || '?'; 
+                  
+                  // ✅ CORREÇÃO DO FORNECEDOR: Adiciona checagens de campos aninhados
+                  const nomeVendedor = compra.nomeVendedor || compra.vendedorNome 
+                                       || compra.vendedor?.nomeCompleto || compra.vendedor?.nome
+                                       || 'Fornecedor Desconhecido';
                   
                   return (
                     <tr key={compra.id || Math.random()} className="hover:bg-gray-50 transition-colors">
@@ -177,6 +220,10 @@ const ComprasPage = () => {
                           {compra.status || 'Pendente'}
                         </span>
                       </td>
+                      {/* Coluna do Fornecedor */}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {nomeVendedor} 
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">
                         R$ {formatarValor(valorTotal)}
                       </td>
@@ -185,7 +232,7 @@ const ComprasPage = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="4" className="px-6 py-10 text-center text-gray-500">
+                  <td colSpan="5" className="px-6 py-10 text-center text-gray-500">
                     <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-base font-medium">Você ainda não realizou nenhuma compra.</p>
                     <p className="text-sm text-gray-400 mt-1">Use o Assistente de Pedidos para fazer sua primeira compra!</p>

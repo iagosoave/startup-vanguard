@@ -8,6 +8,13 @@ const CHATBOT_TOKEN = import.meta.env.VITE_CHATBOT_TOKEN;
 const API_URL = import.meta.env.VITE_API_URL || 'https://prj-startup-java.onrender.com';
 const WEBHOOK_URL = import.meta.env.VITE_MERCADOPAGO_WEBHOOK_URL || 'https://prj-startup-java.onrender.com/api/pagamento/webhook';
 
+// =======================================================
+// ✅ GAMBIARRA / MOCK: Use TRUE para forçar a aprovação PIX no frontend.
+// Mude para FALSE quando o backend em /pix/verificar estiver funcionando.
+// =======================================================
+const MOCK_PIX_APPROVAL = true; 
+// =======================================================
+
 // Validar configurações
 if (!CHATBOT_TOKEN) {
   console.error('❌ [CHATBOT] Token não configurado! Adicione VITE_CHATBOT_TOKEN no arquivo .env');
@@ -316,7 +323,7 @@ const ChatbotPedidos = () => {
     }));
   };
 
-  // ✅ CRIAR PIX - Sem criar carrinho antes
+  // ✅ CRIAR PIX - Corrigido para criar o carrinho antes de chamar a API de PIX
   const handleFinalizarCompra = async (e) => {
     e.preventDefault();
     
@@ -354,12 +361,35 @@ const ChatbotPedidos = () => {
       }
 
       const valorTotal = calcularTotalCarrinho();
+      
+      // ======================================================
+      // ✅ PASSO 1: CRIAR O CARRINHO E OBTER O ID
+      // ======================================================
+      const carrinhoData = {
+        idComprador: userId,
+        itens: carrinho.map(item => ({
+            produtoId: item.produto.id,
+            quantidade: item.quantidade,
+            preco: item.produto.preco
+        }))
+      };
+
+      console.log('🛒 [CARRINHO] Criando carrinho...');
+      const novoCarrinho = await carrinhoAPI.create(carrinhoData); 
+      const novoIdCarrinho = novoCarrinho.id || novoCarrinho.idCarrinho;
+      
+      if (!novoIdCarrinho) {
+        throw new Error('Falha ao criar carrinho. ID não retornado pelo servidor.');
+      }
+      
+      console.log(`🛒 [CARRINHO] Carrinho criado com ID: ${novoIdCarrinho}`);
+      // ======================================================
+
 
       console.log('💳 [PIX] Gerando pagamento PIX direto...');
       console.log('🔗 [WEBHOOK] URL configurada:', WEBHOOK_URL);
       
       // ✅ Montar payload conforme estrutura esperada pelo backend
-      // NÃO criar carrinho antes - enviar dados direto para gerar PIX
       const pixPayload = {
         valor: valorTotal,
         descricao: `Pedido Peça Já! - ${carrinho.length} ${carrinho.length === 1 ? 'item' : 'itens'}`,
@@ -367,7 +397,7 @@ const ChatbotPedidos = () => {
         nome: checkoutNome,
         cpf: currentUser.cpf || '00000000000',
         pedido: {
-          idCarrinho: 0, // ✅ Backend deve criar carrinho internamente
+          idCarrinho: novoIdCarrinho, // <-- FIX: Usar o ID do carrinho recém-criado
           idComprador: userId,
           enderecoEntrega: endereco,
           itens: carrinho.map(item => ({
@@ -423,17 +453,50 @@ const ChatbotPedidos = () => {
     }
   };
 
-  // ✅ VERIFICAR STATUS DO PAGAMENTO - Polling
+  // ✅ VERIFICAR STATUS DO PAGAMENTO - Polling (MOCKADO PARA TESTES)
   const iniciarVerificacaoPagamento = (pagamentoId) => {
     console.log('🔍 [PIX] Iniciando verificação de pagamento:', pagamentoId);
     
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-
+    
     // Verificar a cada 3 segundos
     intervalRef.current = setInterval(async () => {
       try {
+        
+        // ======================================================
+        // ✅ MOCK DE APROVAÇÃO (GAMBIARRA)
+        // Se a flag estiver TRUE, simula o sucesso e interrompe a chamada real.
+        // ======================================================
+        if (MOCK_PIX_APPROVAL) {
+            console.log('🎉 [MOCK] Pagamento aprovado SIMULADO!');
+            setPixStatus('approved');
+            clearInterval(intervalRef.current); // Para o polling
+            
+            if (timerRef.current) clearInterval(timerRef.current); // Para o timer de contagem regressiva
+
+            // Simula um tempo de processamento antes de exibir a mensagem final
+            setTimeout(() => {
+                setCarrinho([]);
+                setShowPixModal(false);
+                setEndereco({
+                    rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: ''
+                });
+                
+                // Usa um pedido ID mockado para a mensagem
+                const mockPedidoId = pagamentoId + ' (MOCK)';
+                
+                adicionarMensagemBot(
+                  `✅ Pagamento confirmado (SIMULADO)!\n\nPedido #${mockPedidoId} criado com sucesso!\n\nTotal: R$ ${pixData.valorTotal.toFixed(2)}\n\n🎉 Obrigado por comprar na Peça Já!\n\nVocê pode acompanhar o status na página "Minhas Compras".`
+                );
+            }, 2000); // 2 segundos de delay
+
+            return; // Interrompe o loop para não chamar a API real
+        }
+        // ======================================================
+
+        // LÓGICA DE POLLING REAL (Será ignorada se MOCK_PIX_APPROVAL for TRUE)
         setVerificandoPagamento(true);
         console.log('🔍 [PIX] Verificando status do pagamento...');
 
@@ -446,7 +509,18 @@ const ChatbotPedidos = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Erro ao verificar pagamento');
+          // Tentar ler o corpo do erro para melhor log
+          let errorInfo = `Erro ao verificar pagamento: Status ${response.status}`;
+          try {
+            const errorJson = await response.json();
+            console.error('❌ [PIX POLLING] Erro JSON do servidor:', errorJson);
+            errorInfo = errorJson?.message || errorJson?.error || JSON.stringify(errorJson);
+          } catch (e) {
+            const errorText = await response.text();
+            console.error('❌ [PIX POLLING] Erro TEXTO do servidor:', errorText);
+            errorInfo = errorText;
+          }
+          throw new Error(errorInfo);
         }
 
         const statusData = await response.json();
